@@ -3,7 +3,7 @@
 2. ```Get Showcase History```
 3. ```Submit Game```
 
-### 1.1 Get Game History ```/user/games/{user_id}```(POST)
+### 1.1 Get Game History ```/user/games/{user_id}``` (GET)
 Retrieves a User's previous games and basic information for each, not limited to but including: id, win/loss, time controls, and opponent.
 
 Response:
@@ -20,7 +20,7 @@ Response:
 ```
 
 
-### 1.2 Get Showcase History ```/user/showcases/{user_id}``` (POST)
+### 1.2 Get Showcase History ```/user/showcases/{user_id}``` (GET)
 Retrives a User's posted showcases and basic information for each, not limited to but including: likes, dislikes, date_posted
 
 Response:
@@ -36,7 +36,7 @@ Response:
 ]
 ```
 
-### 1.3 Submit Game ```/user/games/{user_id}/submit```
+### 1.3 Submit Game ```/user/games/{user_id}/submit``` (POST)
 Add a new game to a User's past games record.
 
 Request:
@@ -87,7 +87,7 @@ Response:
 3. ```Edit Post```
 4. ```Search Showcase```
 
-### 3.1 Post Showcase ```/showcases/post```(POST)
+### 3.1 Post Showcase ```/showcases/post``` (POST)
 Posts a new showcase from a specific user, represented by their user id.
 
 Request:
@@ -109,7 +109,7 @@ Response:
 }
 ```
 
-### 3.2 Add Comment ```/showcases/comment/```(POST)
+### 3.2 Add Comment ```/showcases/comment``` (POST)
 Adds a new comment onto a specific post by a specific user
 
 Request:
@@ -149,17 +149,34 @@ Response:
 ```
 
 
-### 3.4 Search Showcase ```/showcases/search```(GET)
-**Query Parameters:**
-- r
+### 3.4 Search Showcase ```/showcases/search``` (GET)
+Filters through showcases based on specific query parameters, and returns a list of the desired showcases.
 
-**Request:**
-- r
+Query Parameters:
+- title
+- author
+- tags
+
+Response:
+```
+[
+    {
+        "id": "integer",
+        "user_id": "integer",
+        "title": "string",
+        "date_created": "date",
+        "game_id": integer,
+        "caption": "string",
+        ...
+    },
+    ...
+]
+```
 
 # 4. Report Records
 1. ```Make Report```
 
-### 4.1 Make Report
+### 4.1 Make Report ```/reports/post``` (POST)
 Adds a report associated with a user, and optionally a showcase
 
 Request:
