@@ -143,6 +143,9 @@ Request:
 
 Response:
 ```
+{
+    "success":"boolean"
+}
 ```
 
 
@@ -154,13 +157,26 @@ Response:
 - r
 
 # 4. Report Records
-1. ```Post Report```
+1. ```Make Report```
 
-### 4.1 Post Report
+### 4.1 Make Report
+Adds a report associated with a user, and optionally a showcase
+
 Request:
 ```
+{
+    "user_id": "integer",
+    "post_id": "integer",
+    "report_brief": "string",
+    "date_reported": "date",
+    "report_details": "string",
+    ...
+}
 ```
 
 Response:
 ```
+{
+    "success": "boolean"
+}
 ```
