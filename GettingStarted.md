@@ -24,7 +24,3 @@ To run your server locally:
 
 * Install DBeaver if you haven't
 * Create a new connection in DBeaver using the connection string: ```postgresql://myuser:mypassword@localhost:5433/mydb```
-
-
-SUPABASE PW: Dmdv0v7r2DTSHHHW
-CONNECTION STRING: ```postgresql+psycopg://postgres.cebjtmgzkzrzhwsedyiu:Dmdv0v7r2DTSHHHW@aws-0-us-west-1.pooler.supabase.com:5432/postgres```
