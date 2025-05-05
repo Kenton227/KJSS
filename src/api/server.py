@@ -1,28 +1,31 @@
 from fastapi import FastAPI
-from src.api import carts, catalog, bottler, barrels, admin, info, inventory
+from src.api import (
+    carts,
+    catalog,
+    bottler,
+    barrels,
+    admin,
+    info,
+    inventory,
+    games,
+    user,
+    showcases,
+    reports,
+)
 from starlette.middleware.cors import CORSMiddleware
 
 description = """
-Central Coast Cauldrons is the premier ecommerce site for all your alchemical desires.
+Chess site for showing off your games
 """
 tags_metadata = [
-    {"name": "cart", "description": "Place potion orders."},
-    {"name": "catalog", "description": "View the available potions."},
-    {"name": "bottler", "description": "Bottle potions from the raw magical elixir."},
-    {
-        "name": "barrels",
-        "description": "Buy barrels of raw magical elixir for making potions.",
-    },
-    {"name": "admin", "description": "Where you reset the game state."},
-    {"name": "info", "description": "Get updates on time"},
-    {
-        "name": "inventory",
-        "description": "Get the current inventory of shop and buying capacity.",
-    },
+    {"name": "games", "description": "Games..."},
+    {"name": "showcases", "description": "High(/low)lights from games!"},
+    {"name": "user", "description": "You're a user, ur a user, everybody's a user"},
+    {"name": "reports", "description": "x9 Sion"},
 ]
 
 app = FastAPI(
-    title="Central Coast Cauldrons",
+    title="365 Group Project",
     description=description,
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
@@ -43,13 +46,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(inventory.router)
-app.include_router(carts.router)
-app.include_router(catalog.router)
-app.include_router(bottler.router)
-app.include_router(barrels.router)
-app.include_router(admin.router)
-app.include_router(info.router)
+app.include_router(games.router)
+app.include_router(showcases.router)
+app.include_router(user.router)
+app.include_router(reports.router)
+
+# app.include_router(inventory.router)
+# app.include_router(carts.router)
+# app.include_router(catalog.router)
+# app.include_router(bottler.router)
+# app.include_router(barrels.router)
+# app.include_router(admin.router)
+# app.include_router(info.router)
 
 
 @app.get("/")
