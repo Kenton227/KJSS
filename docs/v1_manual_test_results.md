@@ -8,4 +8,88 @@ But whoops, Levy accidentally posted the showcase without any captions. Luckily,
 
 # Testing Results
 
-1. 
+### ```/user/games/{user_id}/submit```
+1. The curl statement:
+    ~~~
+    curl -X 'POST' \
+        'https://three65-group-project.onrender.com/user/games/1/submit' \
+        -H 'accept: */*' \
+        -H 'access_token: cbf5378e064ebeeacea64ee666f64d7d' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "color": "white",
+        "game_status": "win",
+        "time_control": "classical",
+        "opponent_id": 2,
+        "time_in_ms": 10000
+        }'
+    ~~~
+2. Response:
+    ~~~
+    {
+        "success": True
+    }
+    ~~~
+
+### ```/user/games/{user_id}```
+1. The curl statement:
+    ~~~
+    curl -X 'GET' \
+        'https://three65-group-project.onrender.com/user/games/1' \
+        -H 'accept: application/json' \
+        -H 'access_token: cbf5378e064ebeeacea64ee666f64d7d'
+    ~~~
+2. Response:
+    ~~~
+    [
+        {
+            "black": 2,
+            "white": 1,
+            "winner": "white",
+            "time_control": "classical",
+            "duration_in_ms": 10000
+        }
+    ]
+    ~~~
+
+### ```/showcases/post```
+1. The curl statement:
+    ~~~
+    curl -X 'POST' \
+        'https://three65-group-project.onrender.com/showcases/post' \
+        -H 'accept: */*' \
+        -H 'access_token: cbf5378e064ebeeacea64ee666f64d7d' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "user_id": "1",
+        "title": "My First Post",
+        "game_id": 1,
+        "caption": "Get pwned lol"
+        }'
+    ~~~
+2. Response:
+    ~~~
+    {
+        "success": True
+    }
+    ~~~
+
+### ```/showcases/edit/{showcase_id}```
+1. The curl statement:
+    ~~~
+    curl -X 'POST' \
+        'https://three65-group-project.onrender.com/showcases/edit/1' \
+        -H 'accept: */*' \
+        -H 'access_token: cbf5378e064ebeeacea64ee666f64d7d' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "title": "",
+        "caption": "mb lol"
+        }'
+    ~~~
+2. Response:
+    ~~~
+    {
+        "success": True
+    }
+    ~~~

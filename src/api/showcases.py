@@ -10,15 +10,18 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+
 class ShowcaseRequest(BaseModel):
     user_id: str
     title: str
     game_id: int
     caption: str
 
+
 class EditRequest(BaseModel):
     title: str
     caption: str
+
 
 @router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
@@ -40,10 +43,11 @@ def post_showcase(showcase_data: ShowcaseRequest) -> None:
                     "user_id": showcase_data.user_id,
                     "game_id": showcase_data.game_id,
                     "title": showcase_data.title,
-                    "caption": showcase_data.caption 
+                    "caption": showcase_data.caption,
                 }
-            ]
+            ],
         )
+
 
 @router.post("/edit/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
 def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
@@ -58,12 +62,7 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
                         WHERE id = :id
                     """
                 ),
-                [
-                    {
-                        "id": showcase_id,
-                        "new_title": new_data.title
-                    }
-                ]
+                [{"id": showcase_id, "new_title": new_data.title}],
             )
         if new_data.caption != "":
             connection.execute(
@@ -75,10 +74,5 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
                         WHERE id = :id
                     """
                 ),
-                [
-                    {
-                        "id": showcase_id,
-                        "new_caption": new_data.caption
-                    }
-                ]
+                [{"id": showcase_id, "new_caption": new_data.caption}],
             )
