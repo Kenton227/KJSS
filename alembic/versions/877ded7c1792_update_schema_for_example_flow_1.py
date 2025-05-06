@@ -25,7 +25,9 @@ def upgrade() -> None:
     op.create_table(
         "users",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("register_date", sa.Integer, primary=True)
+        sa.Column("username", sa.TEXT, unique=True),
+        sa.Column("email", sa.TEXT, unique=True),
+        sa.Column("register_date", sa.TIMESTAMP, nullable=False, server_default=sa.sql.func.now())
     )
 
     op.create_table(
@@ -34,8 +36,8 @@ def upgrade() -> None:
         sa.Column("black", sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE")),
         sa.Column("white", sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE")),
         sa.Column("winner", sa.TEXT, nullable=False),
-        sa.Column("time_control", sa.TEXT, primary_key=True),
-        sa.Column("duration", sa.TIMESTAMP, nullable=False),
+        sa.Column("time_control", sa.TEXT, nullable=False),
+        sa.Column("duration_in_ms", sa.Integer, nullable=False),
 
         
         sa.CheckConstraint(
@@ -57,13 +59,23 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("created_by", sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE")),
         sa.Column("title", sa.TEXT, nullable=True, server_default="Untitled"),
-        sa.Column("")
+        sa.Column("views", sa.Integer, nullable=False, server_default="0"),
+        sa.Column("caption", sa.TEXT),
+        sa.Column("date_created", sa.DATE, nullable=False, server_default=sa.sql.func.current_date()),
     )
 
     op.create_table(
         "user_showcase_likes",
-        sa.Column("user_id", sa.Integer, sa.ForeignKey()),
-        sa.Column("showcase_id", sa.Integer, sa.ForeignKey())
+        sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE")),
+        sa.Column("showcase_id", sa.Integer, sa.ForeignKey("showcases.id", ondelete="CASCADE")),
+        sa.Column("liked", sa.Boolean, nullable=False, server_default=sa.text("FALSE")),
+        sa.Column("disliked", sa.Boolean, nullable=False, server_default=sa.text("FALSE")),
+
+        sa.PrimaryKeyConstraint("user_id", "showcase_id", name="likes_pk"),
+        sa.CheckConstraint(
+            "liked = FALSE OR disliked = FALSE",
+            name="check_liked_disliked_exclusivity"
+        )
     )
 
 
@@ -72,4 +84,18 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    pass
+    op.drop_table("user_showcase_likes")
+    op.drop_table("showcases")
+    op.drop_table("games")
+    op.drop_table("users")
+
+    op.create_table(
+        "global_inventory",
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("gold", sa.Integer, nullable=False),
+        sa.CheckConstraint("gold >= 0", name="check_gold_positive"),
+    )
+
+    op.execute(sa.text("INSERT INTO global_inventory (gold) VALUES (100)"))
+    
+
