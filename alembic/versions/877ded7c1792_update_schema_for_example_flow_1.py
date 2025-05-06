@@ -38,6 +38,7 @@ def upgrade() -> None:
         sa.Column("winner", sa.TEXT, nullable=False),
         sa.Column("time_control", sa.TEXT, nullable=False),
         sa.Column("duration_in_ms", sa.Integer, nullable=False),
+        sa.Column("date_played", sa.TIMESTAMP, nullable=False, server_default=sa.sql.func.now()),
 
         
         sa.CheckConstraint(
