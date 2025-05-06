@@ -27,3 +27,11 @@ To run your server locally:
     * Click "Database" Tab at the top of screen
     * Select "New Connection from JDBC URL" and use the above connection string
     * Click "Finish" (don't change anything else)
+
+**5. Update .env**
+
+* Modify your default.env file to include the following:
+~~~
+API_KEY=brat
+POSTGRES_URI=postgresql+psycopg://myuser:mypassword@localhost/mydb
+~~~
