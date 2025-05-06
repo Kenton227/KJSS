@@ -1,3 +1,3 @@
 from pydantic import BaseModel
 
-#Use for redudant pydantic classes?
+# Use for redudant pydantic classes?

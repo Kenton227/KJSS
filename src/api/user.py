@@ -11,10 +11,11 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+
 class GameSubmitData(BaseModel):
     color: str
-    game_status: str        
-    time_control: str       
+    game_status: str
+    time_control: str
     opponent_id: int
     time_in_ms: int = Field(ge=0, description="Time must be non-zero and non-negative")
 
@@ -29,23 +30,31 @@ class GameSubmitData(BaseModel):
     @classmethod
     def validate_game_status(cls, game_status: str) -> str:
         if not game_status in ["win", "loss", "draw"]:
-            raise ValueError("game status must be one of the following: ['win', 'loss', or 'draw']")
+            raise ValueError(
+                "game status must be one of the following: ['win', 'loss', or 'draw']"
+            )
         return game_status
+
     @field_validator("time_control")
     @classmethod
     def validate_time_control(cls, time_control: str) -> str:
-        if not time_control in ['classical', 'rapid', 'blitz', 'bullet']:
-            raise ValueError("time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']")
+        if not time_control in ["classical", "rapid", "blitz", "bullet"]:
+            raise ValueError(
+                "time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']"
+            )
         return time_control
-    
+
+
 class GameModel(BaseModel):
     black: int
     white: int
     winner: str
     time_control: str
-    duration_in_ms: int = Field(ge=0, description="Time must be non-zero and non-negative")
+    duration_in_ms: int = Field(
+        ge=0, description="Time must be non-zero and non-negative"
+    )
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_color(self) -> Self:
         if self.black == self.white:
             raise ValueError("the same player can't be both black and white'")
@@ -55,19 +64,23 @@ class GameModel(BaseModel):
     @classmethod
     def validate_game_status(cls, game_status: str) -> str:
         if not game_status in ["black", "white", "draw"]:
-            raise ValueError("game status must be one of the following: ['black', 'white', or 'draw']")
+            raise ValueError(
+                "game status must be one of the following: ['black', 'white', or 'draw']"
+            )
         return game_status
+
     @field_validator("time_control")
     @classmethod
     def validate_time_control(cls, time_control: str) -> str:
-        if not time_control in ['classical', 'rapid', 'blitz', 'bullet']:
-            raise ValueError("time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']")
+        if not time_control in ["classical", "rapid", "blitz", "bullet"]:
+            raise ValueError(
+                "time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']"
+            )
         return time_control
 
-    
-#TODO: WRITE TEST
-def createGameModel(user_id: int, game_data: GameSubmitData) -> GameModel:
 
+# TODO: WRITE TEST
+def createGameModel(user_id: int, game_data: GameSubmitData) -> GameModel:
     player_colors = []
     BLACK_INDEX = 0
     WHITE_INDEX = 1
@@ -83,13 +96,12 @@ def createGameModel(user_id: int, game_data: GameSubmitData) -> GameModel:
         white=player_colors[WHITE_INDEX],
         winner="black" if player_colors[BLACK_INDEX] == user_id else "white",
         time_control=game_data.time_control,
-        duration_in_ms=game_data.time_in_ms
+        duration_in_ms=game_data.time_in_ms,
     )
-        
+
 
 @router.post("/games/{user_id}/submit", status_code=status.HTTP_204_NO_CONTENT)
 def submit_game(user_id: int, submission_data: GameSubmitData):
-
     game_data = createGameModel(user_id, submission_data)
     print(f"Adding game data: {game_data}")
 
@@ -114,10 +126,11 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
                     "white_player_id": game_data.white,
                     "winner": game_data.winner,
                     "time_control": game_data.time_control,
-                    "time": game_data.duration_in_ms
+                    "time": game_data.duration_in_ms,
                 }
-            ]
+            ],
         )
+
 
 @router.get("/games/{user_id}")
 def get_history(user_id: int) -> List[GameModel]:
@@ -132,12 +145,6 @@ def get_history(user_id: int) -> List[GameModel]:
                 LIMIT 20
                 """
             ),
-            [
-                {
-                    "user_id": user_id
-                }
-            ]
+            [{"user_id": user_id}],
         )
     return games
-
-
