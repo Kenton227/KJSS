@@ -18,5 +18,7 @@ class Game(BaseModel):
 
 @router.post("/{game_id}", response_model=Game)
 def get_game(game_id: int):
-    # TODO: function gets game data given a game id
-    pass
+    if game_id not in db:
+        return {"detail": f"Game with ID {game_id} not found"}
+    game_data = db[game_id]
+    return Game(id=game_id, **game_data)
