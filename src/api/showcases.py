@@ -4,8 +4,6 @@ from src.api import auth
 import sqlalchemy
 from src import database as db
 
-from datetime import datetime
-
 router = APIRouter(
     prefix="/showcases",
     tags=["showcases"],
@@ -24,11 +22,6 @@ class EditRequest(BaseModel):
     title: str
     caption: str
 
-class comment(BaseModel):
-    post_id: int
-    auther_uid: int
-    date_posted: datetime
-    comment_string: str
 
 
 @router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
@@ -85,8 +78,6 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
                 [{"id": showcase_id, "new_caption": new_data.caption}],
             )
 
-@router.post("/showcases/{showcase_id}/comment", status_code=status.HTTP_204_NO_CONTENT)
-def post_comment(comment_content: comment, showcase_id: int):
     
 
     
