@@ -28,7 +28,7 @@ class comment(BaseModel):
     post_id: int
     auther_uid: int
     date_posted: datetime
-    comment_content: str
+    comment_string: str
 
 
 @router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
@@ -86,6 +86,7 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
             )
 
 @router.post("/showcases/{showcase_id}/comment", status_code=status.HTTP_204_NO_CONTENT)
-def post_comment(comment: str, user_id: int):
+def post_comment(comment_content: comment, showcase_id: int):
     
 
+    
