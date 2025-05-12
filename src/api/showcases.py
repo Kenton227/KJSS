@@ -85,7 +85,7 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
                 [{"id": showcase_id, "new_caption": new_data.caption}],
             )
 
-@router.post("/showcases/{showcase_id}/comment", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{showcase_id}/comment", status_code=status.HTTP_204_NO_CONTENT)
 def post_comment(comment_content: comment, showcase_id: int):
     with db.engine.begin() as connection:
         #makes sure comment string isn't empty
