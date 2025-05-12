@@ -16,7 +16,7 @@ class Game(BaseModel):
     white_player_id: int
 
 
-@router.post("/{game_id}", response_model=Game)
+@router.get("/{game_id}", response_model=Game)
 def get_game(game_id: int):
     # retrieves black and white player id given a game id
     with db.engine.begin() as connection:
