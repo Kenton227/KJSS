@@ -79,6 +79,15 @@ class GameModel(BaseModel):
         return time_control
 
 
+class Showcase(BaseModel):
+    created_by: int
+    title: str
+    views: int
+    caption: str
+    date_created: str
+    game_id: int
+
+
 # TODO: WRITE TEST
 def createGameModel(user_id: int, game_data: GameSubmitData) -> GameModel:
     player_colors = []
@@ -148,3 +157,31 @@ def get_history(user_id: int) -> List[GameModel]:
             [{"user_id": user_id}],
         )
     return games
+
+
+@router.get("/showcases/{user_id}")
+def get_user_showcases(user_id: int) -> List[Showcase]:
+    with db.engine.begin() as connection:
+        showcases = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT created_by, title, views, caption, date_created, game_id
+                FROM showcases
+                WHERE created_by = :user_id
+                ORDER BY date_created DESC
+                """
+            ),
+            {"user_id": user_id},
+        ).fetchall()
+    Showcases = [
+        Showcase(
+            created_by=showcase.created_by,
+            title=showcase.title,
+            views=showcase.views,
+            caption=showcase.caption,
+            date_created=str(showcase.date_created),
+            game_id=showcase.game_id,
+        )
+        for showcase in showcases
+    ]
+    return Showcases
