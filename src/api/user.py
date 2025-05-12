@@ -5,6 +5,8 @@ import sqlalchemy
 from src import database as db
 from typing import List, Self
 
+from datetime import date
+
 router = APIRouter(
     prefix="/user",
     tags=["user"],
@@ -84,7 +86,7 @@ class Showcase(BaseModel):
     title: str
     views: int
     caption: str
-    date_created: str
+    date_created: date
     game_id: int
 
 
@@ -141,7 +143,7 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
         )
 
 
-@router.get("/games/{user_id}")
+@router.get("/games/{user_id}", response_model=List[GameModel])
 def get_history(user_id: int) -> List[GameModel]:
     with db.engine.begin() as connection:
         games = connection.execute(
@@ -155,11 +157,11 @@ def get_history(user_id: int) -> List[GameModel]:
                 """
             ),
             [{"user_id": user_id}],
-        )
+        ).all()
     return games
 
 
-@router.get("/showcases/{user_id}")
+@router.get("/showcases/{user_id}", response_model=List[Showcase])
 def get_user_showcases(user_id: int) -> List[Showcase]:
     with db.engine.begin() as connection:
         showcases = connection.execute(
@@ -172,16 +174,5 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
                 """
             ),
             {"user_id": user_id},
-        ).fetchall()
-    Showcases = [
-        Showcase(
-            created_by=showcase.created_by,
-            title=showcase.title,
-            views=showcase.views,
-            caption=showcase.caption,
-            date_created=str(showcase.date_created),
-            game_id=showcase.game_id,
-        )
-        for showcase in showcases
-    ]
-    return Showcases
+        ).all()
+    return showcases
