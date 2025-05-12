@@ -9,3 +9,70 @@ router = APIRouter(
     tags=["showcases"],
     dependencies=[Depends(auth.get_api_key)],
 )
+
+
+class ShowcaseRequest(BaseModel):
+    user_id: str
+    title: str
+    game_id: int
+    caption: str
+
+
+class EditRequest(BaseModel):
+    title: str
+    caption: str
+
+
+@router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
+def post_showcase(showcase_data: ShowcaseRequest) -> None:
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO showcases (created_by, game_id, title, caption)
+                VALUES (
+                    :user_id,
+                    :game_id,
+                    :title,
+                    :caption
+                )
+                """
+            ),
+            [
+                {
+                    "user_id": showcase_data.user_id,
+                    "game_id": showcase_data.game_id,
+                    "title": showcase_data.title,
+                    "caption": showcase_data.caption,
+                }
+            ],
+        )
+
+
+@router.post("/edit/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
+def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
+    with db.engine.begin() as connection:
+        if new_data.title != "":
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE showcases
+                        SET
+                            title = :new_title
+                        WHERE id = :id
+                    """
+                ),
+                [{"id": showcase_id, "new_title": new_data.title}],
+            )
+        if new_data.caption != "":
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE showcases
+                        SET
+                            caption = :new_caption
+                        WHERE id = :id
+                    """
+                ),
+                [{"id": showcase_id, "new_caption": new_data.caption}],
+            )
