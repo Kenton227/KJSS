@@ -24,14 +24,14 @@ class GameSubmitData(BaseModel):
     @field_validator("color")
     @classmethod
     def validate_color(cls, color: str) -> str:
-        if not color in ["black", "white"]:
+        if color not in ["black", "white"]:
             raise ValueError("color must either be 'black' or 'white'")
         return color
 
     @field_validator("game_status")
     @classmethod
     def validate_game_status(cls, game_status: str) -> str:
-        if not game_status in ["win", "loss", "draw"]:
+        if game_status not in ["win", "loss", "draw"]:
             raise ValueError(
                 "game status must be one of the following: ['win', 'loss', or 'draw']"
             )
@@ -40,7 +40,7 @@ class GameSubmitData(BaseModel):
     @field_validator("time_control")
     @classmethod
     def validate_time_control(cls, time_control: str) -> str:
-        if not time_control in ["classical", "rapid", "blitz", "bullet"]:
+        if time_control not in ["classical", "rapid", "blitz", "bullet"]:
             raise ValueError(
                 "time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']"
             )
@@ -65,7 +65,7 @@ class GameModel(BaseModel):
     @field_validator("winner")
     @classmethod
     def validate_game_status(cls, game_status: str) -> str:
-        if not game_status in ["black", "white", "draw"]:
+        if game_status not in ["black", "white", "draw"]:
             raise ValueError(
                 "game status must be one of the following: ['black', 'white', or 'draw']"
             )
@@ -74,7 +74,7 @@ class GameModel(BaseModel):
     @field_validator("time_control")
     @classmethod
     def validate_time_control(cls, time_control: str) -> str:
-        if not time_control in ["classical", "rapid", "blitz", "bullet"]:
+        if time_control not in ["classical", "rapid", "blitz", "bullet"]:
             raise ValueError(
                 "time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']"
             )
