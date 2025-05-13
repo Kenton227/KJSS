@@ -4,7 +4,6 @@ from src.api import auth
 import sqlalchemy
 from src import database as db
 
-from datetime import date
 
 router = APIRouter(
     prefix="/reports",

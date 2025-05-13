@@ -1,12 +1,5 @@
 from fastapi import FastAPI
 from src.api import (
-    carts,
-    catalog,
-    bottler,
-    barrels,
-    admin,
-    info,
-    inventory,
     games,
     user,
     showcases,
