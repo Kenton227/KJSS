@@ -14,7 +14,25 @@ class Game(BaseModel):
     white_player_id: int
 
 
-@router.post("/{game_id}", response_model=Game)
+@router.get("/{game_id}", response_model=Game)
 def get_game(game_id: int):
-    # TODO: function gets game data given a game id
-    pass
+    # retrieves black and white player id given a game id
+    with db.engine.begin() as connection:
+        game_data = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT black, white
+                FROM games
+                WHERE id = :game_id
+                """
+            ),
+            [
+                {
+                    "game_id": game_id,
+                }
+            ],
+        ).one()
+        black_id = game_data.black
+        white_id = game_data.white
+
+    return Game(black_player_id=black_id, white_player_id=white_id)
