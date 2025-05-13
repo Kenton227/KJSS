@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
 from src.api import auth
+from src import database as db
+import sqlalchemy
 
 router = APIRouter(
     prefix="/games",
