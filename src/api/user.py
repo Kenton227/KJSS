@@ -5,6 +5,8 @@ import sqlalchemy
 from src import database as db
 from typing import List, Self
 
+from datetime import date
+
 router = APIRouter(
     prefix="/user",
     tags=["user"],
@@ -22,14 +24,14 @@ class GameSubmitData(BaseModel):
     @field_validator("color")
     @classmethod
     def validate_color(cls, color: str) -> str:
-        if not color in ["black", "white"]:
+        if color not in ["black", "white"]:
             raise ValueError("color must either be 'black' or 'white'")
         return color
 
     @field_validator("game_status")
     @classmethod
     def validate_game_status(cls, game_status: str) -> str:
-        if not game_status in ["win", "loss", "draw"]:
+        if game_status not in ["win", "loss", "draw"]:
             raise ValueError(
                 "game status must be one of the following: ['win', 'loss', or 'draw']"
             )
@@ -38,7 +40,7 @@ class GameSubmitData(BaseModel):
     @field_validator("time_control")
     @classmethod
     def validate_time_control(cls, time_control: str) -> str:
-        if not time_control in ["classical", "rapid", "blitz", "bullet"]:
+        if time_control not in ["classical", "rapid", "blitz", "bullet"]:
             raise ValueError(
                 "time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']"
             )
@@ -63,7 +65,7 @@ class GameModel(BaseModel):
     @field_validator("winner")
     @classmethod
     def validate_game_status(cls, game_status: str) -> str:
-        if not game_status in ["black", "white", "draw"]:
+        if game_status not in ["black", "white", "draw"]:
             raise ValueError(
                 "game status must be one of the following: ['black', 'white', or 'draw']"
             )
@@ -72,11 +74,20 @@ class GameModel(BaseModel):
     @field_validator("time_control")
     @classmethod
     def validate_time_control(cls, time_control: str) -> str:
-        if not time_control in ["classical", "rapid", "blitz", "bullet"]:
+        if time_control not in ["classical", "rapid", "blitz", "bullet"]:
             raise ValueError(
                 "time control must be one of the following: ['classical', 'rapid', 'blitz', 'bullet']"
             )
         return time_control
+
+
+class Showcase(BaseModel):
+    created_by: int
+    title: str
+    views: int
+    caption: str
+    date_created: date
+    game_id: int
 
 
 # TODO: WRITE TEST
@@ -132,7 +143,7 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
         )
 
 
-@router.get("/games/{user_id}")
+@router.get("/games/{user_id}", response_model=List[GameModel])
 def get_history(user_id: int) -> List[GameModel]:
     with db.engine.begin() as connection:
         games = connection.execute(
@@ -146,5 +157,22 @@ def get_history(user_id: int) -> List[GameModel]:
                 """
             ),
             [{"user_id": user_id}],
-        )
+        ).all()
     return games
+
+
+@router.get("/showcases/{user_id}", response_model=List[Showcase])
+def get_user_showcases(user_id: int) -> List[Showcase]:
+    with db.engine.begin() as connection:
+        showcases = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT created_by, title, views, caption, date_created, game_id
+                FROM showcases
+                WHERE created_by = :user_id
+                ORDER BY date_created DESC
+                """
+            ),
+            {"user_id": user_id},
+        ).all()
+    return showcases
