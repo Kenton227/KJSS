@@ -5,34 +5,42 @@ Wanting to share this showcase to Beth, he searches for the showcase with GET```
 
 ## Testing Results
 
-### ```/showcases/search```
-1. The curl statement:
-    ~~~
-    
-    ~~~
-2. Response:
-    ~~~
-    
-    ~~~
-
 ### ```/games/{game_id}```
 1. The curl statement:
     ~~~
-    
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/games/1' \
+        -H 'accept: application/json' \
+        -H 'access_token: brat'
     ~~~
 2. Response:
     ~~~
-    
+    {
+        "black_player_id": 1,
+        "white_player_id": 2
+    }
     ~~~
 
 ### ```/showcases/comment```
 1. The curl statement:
     ~~~
-    
+    curl -X 'POST' \
+        'http://127.0.0.1:3000/showcases/1/comment' \
+        -H 'accept: */*' \
+        -H 'access_token: brat' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "post_id": 1,
+        "auther_uid": 1,
+        "date_posted": "2025-05-13T10:58:20.317Z",
+        "comment_string": "hello darkness my old friend..."
+        }'
     ~~~
 2. Response:
     ~~~
-    
+    {
+        "success": true
+    }
     ~~~
 
 # Reporting Obviously Fake Account Flow
@@ -47,51 +55,125 @@ So, Holmes files a report against the account and a few of the showcases by call
 ### ```/games/{game_id}```
 1. The curl statement:
     ~~~
-    
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/games/1' \
+        -H 'accept: application/json' \
+        -H 'access_token: brat'
     ~~~
 2. Response:
     ~~~
-    
+    {
+        "black_player_id": 1,
+        "white_player_id": 2
+    }
     ~~~
 
 ### ```/user/games/{user_id}```
 1. The curl statement:
     ~~~
-    
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/user/games/1' \
+        -H 'accept: application/json' \
+        -H 'access_token: brat'
     ~~~
 2. Response:
     ~~~
-    
+    [
+        {
+            "black": 2,
+            "white": 1,
+            "winner": "white",
+            "time_control": "classical",
+            "duration_in_ms": 1100
+        },
+        {
+            "black": 2,
+            "white": 1,
+            "winner": "white",
+            "time_control": "classical",
+            "duration_in_ms": 12
+        },
+        {
+            "black": 2,
+            "white": 1,
+            "winner": "white",
+            "time_control": "classical",
+            "duration_in_ms": 0
+        },
+        {
+            "black": 1,
+            "white": 2,
+            "winner": "white",
+            "time_control": "classical",
+            "duration_in_ms": 10
+        }
+    ]
     ~~~
 
 ### ```/user/showcases/{user_id}```
 1. The curl statement:
     ~~~
-    
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/user/showcases/1' \
+        -H 'accept: application/json' \
+        -H 'access_token: brat'
     ~~~
 2. Response:
     ~~~
-    
+    [
+        {
+            "created_by": 1,
+            "title": "boowerqe",
+            "views": 0,
+            "caption": "rwerewr",
+            "date_created": "2025-05-06",
+            "game_id": 1
+        }
+    ]
     ~~~
 
 ### ```/reports/post```
 1. The curl statement:
     ~~~
-    
+    curl -X 'POST' \
+        'http://127.0.0.1:3000/reports/post' \
+        -H 'accept: */*' \
+        -H 'access_token: brat' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "user_id": 1,
+        "showcase_id": 1,
+        "report_brief": "inappropriate content",
+        "report_details": "did not need to see hans ziemaan speculative xray sketch"
+        }'
     ~~~
 2. Response:
     ~~~
-    
+    {
+        "success": true,
+    }
     ~~~
 
 
 ### ```/showcases/comment```
 1. The curl statement:
     ~~~
-    
+    curl -X 'POST' \
+        'http://127.0.0.1:3000/showcases/1/comment' \
+        -H 'accept: */*' \
+        -H 'access_token: brat' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "post_id": 1,
+        "auther_uid": 1,
+        "date_posted": "2025-05-13T10:58:20.317Z",
+        "comment_string": "hello darkness my old friend..."
+        }'
     ~~~
 2. Response:
     ~~~
-    
+    {
+        "success": true
+    }
     ~~~
 
