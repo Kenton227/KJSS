@@ -124,6 +124,10 @@ def post_comment(comment_content: comment, showcase_id: int):
 @router.get("/search", status_code=status.HTTP_200_OK,
     response_model=List[showcase_search_result],)
 def search_showcase(input_title: str, input_author_name: str):
+    """
+    Search showcases by title and/or author name. If you only want to search by author or title, for example just search by author name, just type anything
+    into the other category
+    """
     with db.engine.begin() as connection:
         search = connection.execute(
             sqlalchemy.text(
