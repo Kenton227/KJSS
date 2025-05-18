@@ -36,6 +36,7 @@ class comment(BaseModel):
 class showcase_search_result(BaseModel):
     showcase_id: int
     user_id: int
+    username: str
     title: str
     date_created: date
     caption: str
