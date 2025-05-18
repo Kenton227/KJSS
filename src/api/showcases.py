@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, status
 from src.api import auth
+from typing import List
 import sqlalchemy
 from src import database as db
 
-from datetime import datetime
+from datetime import date
 
 router = APIRouter(
     prefix="/showcases",
@@ -28,8 +29,16 @@ class EditRequest(BaseModel):
 class comment(BaseModel):
     post_id: int
     auther_uid: int
-    date_posted: datetime
+    date_posted: date
     comment_string: str
+
+
+class showcase_search_result(BaseModel):
+    showcase_id: int
+    user_id: int
+    title: str
+    date_created: date
+    caption: str
 
 
 @router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
@@ -111,3 +120,31 @@ def post_comment(comment_content: comment, showcase_id: int):
                     "comment": comment_content.comment_string,
                 },
             )
+@router.get("/search", status_code=status.HTTP_200_OK,
+    response_model=List[showcase_search_result],)
+def search_showcase(input_title: str, input_author_name: str):
+    with db.engine.begin() as connection:
+        search = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT showcases.id AS showcase_id, created_by AS user_id, users.username AS username, title, date_created, caption
+                FROM showcases
+                JOIN users ON showcases.created_by = users.id
+            
+                """
+            )
+        ).mappings().all()
+
+        matched: List[showcase_search_result] = []
+        for row in search:
+            if row["title"] == input_title or row["username"] == input_author_name:
+                showcase = showcase_search_result(
+                showcase_id=row["showcase_id"],
+                user_id=row["user_id"],
+                username=row["username"],
+                title=row["title"],
+                date_created=row["date_created"],
+                caption=row["caption"]
+            )
+                matched.append(showcase)
+        return matched
