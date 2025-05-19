@@ -125,8 +125,8 @@ def post_comment(comment_content: comment, showcase_id: int):
     response_model=List[showcase_search_result],)
 def search_showcase(input_title: str, input_author_name: str):
     """
-    Search showcases by title and/or author name. If you only want to search by author or title, for example just search by author name, just type anything
-    into the other category
+    Search showcases by title and/or author name. If you only want to search either by author or title, for example just search by author name, just type 'any' into title
+    then your target author name into the other category
     """
     with db.engine.begin() as connection:
         search = connection.execute(
@@ -141,15 +141,43 @@ def search_showcase(input_title: str, input_author_name: str):
         ).mappings().all()
 
         matched: List[showcase_search_result] = []
-        for row in search:
-            if row["title"] == input_title or row["username"] == input_author_name:
-                showcase = showcase_search_result(
-                showcase_id=row["showcase_id"],
-                user_id=row["user_id"],
-                username=row["username"],
-                title=row["title"],
-                date_created=row["date_created"],
-                caption=row["caption"]
-            )
-                matched.append(showcase)
+        if input_title == 'any':
+            for row in search:
+                if row["username"] == input_author_name:
+                    showcase = showcase_search_result(
+                    showcase_id=row["showcase_id"],
+                    user_id=row["user_id"],
+                    username=row["username"],
+                    title=row["title"],
+                    date_created=row["date_created"],
+                    caption=row["caption"]
+                )
+                    matched.append(showcase)
+        elif input_author_name == 'any':
+            for row in search:
+                if row["title"] == input_title:
+                    showcase = showcase_search_result(
+                    showcase_id=row["showcase_id"],
+                    user_id=row["user_id"],
+                    username=row["username"],
+                    title=row["title"],
+                    date_created=row["date_created"],
+                    caption=row["caption"]
+                )
+                    matched.append(showcase)
+        else:
+            for row in search:
+                if row["title"] == input_title and row["username"] == input_author_name:
+                    showcase = showcase_search_result(
+                    showcase_id=row["showcase_id"],
+                    user_id=row["user_id"],
+                    username=row["username"],
+                    title=row["title"],
+                    date_created=row["date_created"],
+                    caption=row["caption"]
+                )
+                    matched.append(showcase)
+
+        
+        
         return matched
