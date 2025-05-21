@@ -123,10 +123,8 @@ def post_comment(comment_content: comment, showcase_id: int):
             )
 @router.get("/search", status_code=status.HTTP_200_OK,
     response_model=List[showcase_search_result],)
-def search_showcase(input_title: str, input_author_name: str):
+def search_showcase(input: str):
     """
-    Search showcases by title and/or author name. If you only want to search either by author or title, for example just search by author name, just type 'any' into title
-    then your target author name into the other category
     """
     with db.engine.begin() as connection:
         search = connection.execute(
@@ -140,44 +138,39 @@ def search_showcase(input_title: str, input_author_name: str):
             )
         ).mappings().all()
 
+
+        #list to hold matched search results
         matched: List[showcase_search_result] = []
-        if input_title == 'any':
-            for row in search:
-                if row["username"] == input_author_name:
-                    showcase = showcase_search_result(
-                    showcase_id=row["showcase_id"],
-                    user_id=row["user_id"],
-                    username=row["username"],
-                    title=row["title"],
-                    date_created=row["date_created"],
-                    caption=row["caption"]
+        #lowercase the input
+        lower_input = input.lower()
+        for row in search:
+            lower_username = row["username"].lower()
+            lower_title = row["title"].lower()
+            #checks username
+            check_username = match_char(target= lower_input, compare= lower_username)
+            #checks title
+            check_title = match_char(target= lower_input, compare = lower_title)
+            #if the returned result from both checks is greater than or equal to length of lower_input, add to matched list
+            if check_username >= len(lower_input) or check_title >= len(lower_input):
+                showcase = showcase_search_result(
+                showcase_id=row["showcase_id"],
+                user_id=row["user_id"],
+                username=row["username"],
+                title=row["title"],
+                date_created=row["date_created"],
+                caption=row["caption"]
                 )
-                    matched.append(showcase)
-        elif input_author_name == 'any':
-            for row in search:
-                if row["title"] == input_title:
-                    showcase = showcase_search_result(
-                    showcase_id=row["showcase_id"],
-                    user_id=row["user_id"],
-                    username=row["username"],
-                    title=row["title"],
-                    date_created=row["date_created"],
-                    caption=row["caption"]
-                )
-                    matched.append(showcase)
-        else:
-            for row in search:
-                if row["title"] == input_title and row["username"] == input_author_name:
-                    showcase = showcase_search_result(
-                    showcase_id=row["showcase_id"],
-                    user_id=row["user_id"],
-                    username=row["username"],
-                    title=row["title"],
-                    date_created=row["date_created"],
-                    caption=row["caption"]
-                )
-                    matched.append(showcase)
+                matched.append(showcase)
 
         
         
         return matched
+    
+#helper function for search
+def match_char(target: str, compare: str):
+    if target in compare:
+        #if target string exists in compare, return its length
+        #for example, if we're searchin for 'hel' and compare is 'hello', it would return 3
+        return len(target)
+    #otherwise, return 0
+    return 0
