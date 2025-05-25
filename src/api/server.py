@@ -8,7 +8,7 @@ from src.api import (
 from starlette.middleware.cors import CORSMiddleware
 
 description = """
-Chess site for showing off your games
+The new and upcoming Chess social platform for both serious and casual fans alike!
 """
 tags_metadata = [
     {"name": "games", "description": "Games..."},
@@ -18,13 +18,13 @@ tags_metadata = [
 ]
 
 app = FastAPI(
-    title="365 Group Project",
+    title="Showboard!",
     description=description,
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
     contact={
-        "name": "Lucas Pierce",
-        "email": "lupierce@calpoly.edu",
+        "name": "Team KJSS",
+        "email": "365teamKJSS@gmail.com",
     },
     openapi_tags=tags_metadata,
 )
@@ -55,4 +55,4 @@ app.include_router(reports.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Shop is open for business!"}
+    return {"message": "Shows from the board!"}
