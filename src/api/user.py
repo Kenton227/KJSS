@@ -1,11 +1,13 @@
 from pydantic import BaseModel, field_validator, Field, model_validator
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query, HTTPException
+import sqlalchemy.exc
 from src.api import auth
 import sqlalchemy
 from src import database as db
-from typing import List, Self
+from typing import List, Self, Optional
 
 from datetime import date
+from psycopg import errors
 
 router = APIRouter(
     prefix="/user",
@@ -176,3 +178,30 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
             {"user_id": user_id},
         ).all()
     return showcases
+
+@router.post("/register", status_code=status.HTTP_204_NO_CONTENT)
+def register_user(username: str, user_email: Optional[str] = Query(default=None)):
+    with db.engine.begin() as connection:
+        try: 
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO users(username, email, register_date)
+                    VALUES
+                        (:username, LOWER(:user_email), DEFAULT)
+                    """
+                ),
+                {
+                    "username": username,
+                    "user_email": user_email
+                }
+            )
+        except sqlalchemy.exc.IntegrityError as e:
+            if isinstance(e.orig, errors.UniqueViolation):
+                print("TESt")
+                raise HTTPException(
+                    status_code=422,
+                    detail="User or email already in use"
+                )
+                
+
