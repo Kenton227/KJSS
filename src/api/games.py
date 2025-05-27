@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from src.api import auth
 from src import database as db
 import sqlalchemy
@@ -33,7 +33,12 @@ def get_game(game_id: int):
                     "game_id": game_id,
                 }
             ],
-        ).one()
+        ).one_or_none()
+        if game_data is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No game found with id: {game_id}"
+            )
         black_id = game_data.black
         white_id = game_data.white
 
