@@ -4,10 +4,11 @@ import sqlalchemy.exc
 from src.api import auth
 import sqlalchemy
 from src import database as db
-from typing import Self, Optional
+from typing import Self, Optional, List
 from psycopg import errors
 
 from datetime import datetime
+from src.db.schemas import Showcase
 
 router = APIRouter(
     prefix="/showcases",
@@ -34,19 +35,23 @@ class EditRequest(BaseModel):
         return self
 
 
-
-class Comment(BaseModel):
-    post_id: int
-    auther_id: int
+class NewComment(BaseModel):
+    author_id: int
     date_posted: datetime
     comment_string: str = Field(..., min_length=1)
 
 
-@router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
+class Comment(BaseModel):
+    author: str = Field(..., min_length=1)
+    date_posted: datetime
+    content: str = Field(..., min_length=1)
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
     with db.engine.begin() as connection:
         try:
-            connection.execute(
+            new_showcase = connection.execute(
                 sqlalchemy.text(
                     """
                     INSERT INTO showcases (created_by, game_id, title, caption)
@@ -56,6 +61,7 @@ def post_showcase(showcase_data: ShowcaseRequest) -> None:
                         :title,
                         :caption
                     )
+                    RETURNING title, date_created
                     """
                 ),
                 [
@@ -66,22 +72,25 @@ def post_showcase(showcase_data: ShowcaseRequest) -> None:
                         "caption": showcase_data.caption,
                     }
                 ],
-            )
+            ).one()
         except sqlalchemy.exc.IntegrityError as e:
             if isinstance(e.orig, errors.ForeignKeyViolation):
                 if "games" in e.orig.__str__():
                     raise HTTPException(
-                        status_code=404,
-                        detail="Referenced game ID does not exist"
+                        status_code=404, detail="Referenced game ID does not exist"
                     )
                 if "users" in e.orig.__str__():
                     raise HTTPException(
-                        status_code=404,
-                        detail="Referenced user ID does not exist"
+                        status_code=404, detail="Referenced user ID does not exist"
                     )
+    return {
+        "message": "New showcase created!",
+        "title": new_showcase.title,
+        "date_created": new_showcase.date_created,
+    }
 
 
-@router.post("/edit/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
 def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
     with db.engine.begin() as connection:
         title_confirm = None
@@ -114,32 +123,144 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
             ).one_or_none()
         if not title_confirm and not caption_confirm:
             raise HTTPException(
-                status_code=404,
-                detail=f"No showcase found with id: {showcase_id}"
+                status_code=404, detail=f"No showcase found with id: {showcase_id}"
             )
 
 
-@router.post("/{showcase_id}/comment", status_code=status.HTTP_204_NO_CONTENT)
-def post_comment(comment_content: Comment, showcase_id: int):
+@router.post("/{showcase_id}/comment", status_code=status.HTTP_201_CREATED)
+def post_comment(comment_content: NewComment, showcase_id: int):
     with db.engine.begin() as connection:
         # makes sure comment string isn't empty
-        if comment_content.comment_string != "":
-            connection.execute(
+        if comment_content.comment_string == "":
+            raise HTTPException(status_code=422, detail="Comment is empty")
+
+        try:
+            new_comment = connection.execute(
                 sqlalchemy.text(
                     """
-                    INSERT INTO showcase_comments (post_id, author_id, showcase_id, comment)
+                    INSERT INTO showcase_comments (author_id, showcase_id, comment)
                     VALUES (
-                    :post_id,
                     :author_id,
                     :showcase_id,
                     :comment
                     )
+                    RETURNING author_id, comment, created_at
                     """
                 ),
                 {
-                    "post_id": comment_content.post_id,
-                    "author_id": comment_content.auther_id,
+                    "author_id": comment_content.author_id,
                     "showcase_id": showcase_id,
                     "comment": comment_content.comment_string,
                 },
+            ).one()
+        except sqlalchemy.exc.IntegrityError as e:
+            if isinstance(e.orig, errors.ForeignKeyViolation):
+                if "users" in e.orig.__str__():
+                    raise HTTPException(status_code=422, detail="Bad user reference")
+                elif "showcases" in e.orig.__str__():
+                    raise HTTPException(
+                        status_code=422, detail="Bad showcase reference"
+                    )
+                else:
+                    raise e
+    return {
+        "message": "Comment successfully sent!",
+        "author_uid": new_comment.author_id,
+        "comment": new_comment.comment,
+        "time_sent": new_comment.created_at,
+    }
+
+
+@router.get("/{showcase_id}/comments", response_model=List[Comment])
+def get_comments(showcase_id: int):
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT username, comment, created_at
+                FROM showcase_comments as sc
+                JOIN users as u on sc.author_id = u.id
+                WHERE showcase_id = :SId
+                """
+            ),
+            [{"SId": showcase_id}],
+        ).all()
+
+        if not result:
+            showcase_exists = connection.execute(
+                sqlalchemy.text("SELECT 1 FROM showcases where id = :SId"),
+                {"SId": showcase_id},
+            ).one_or_none()
+            if not showcase_exists:
+                raise HTTPException(status_code=404, detail="No showcase found")
+
+    return [
+        Comment(author=row.username, date_posted=row.created_at, content=row.comment)
+        for row in result
+    ]
+
+
+@router.delete("/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_showcase(showcase_id: int):
+    with db.engine.begin() as connection:
+        try:
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    DELETE FROM showcases
+                        WHERE id = :SId
+                    RETURNING id
+                    """
+                ),
+                [{"SId": showcase_id}],
+            ).one()
+        except sqlalchemy.exc.NoResultFound:
+            raise HTTPException(status_code=404, detail="Showcase not found")
+
+
+@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_comment(comment_id: int):
+    with db.engine.begin() as connection:
+        try:
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    DELETE FROM showcase_comments
+                        WHERE post_id = :CId
+                    RETURNING post_id
+                    """
+                ),
+                [{"CId": comment_id}],
+            ).one()
+        except sqlalchemy.exc.NoResultFound:
+            raise HTTPException(status_code=404, detail="Comment not found")
+
+
+@router.get("/{showcase_id}")
+def get_showcase(showcase_id: int):
+    with db.engine.begin() as connection:
+        try:
+            result = connection.execute(
+                sqlalchemy.text(
+                    """
+                    SELECT created_by, title, views, caption, date_created, game_id
+                    FROM showcases
+                    WHERE id = :showcase_id
+                    ORDER BY date_created DESC
+                    """
+                ),
+                {"showcase_id": showcase_id},
+            ).one()
+
+            return Showcase(
+                created_by=result.created_by,
+                title=result.title,
+                views=result.views,
+                caption=result.caption,
+                date_created=result.date_created,
+                game_id=result.game_id,
+            )
+        except sqlalchemy.exc.NoResultFound:
+            raise HTTPException(
+                status_code=404, detail=f"No showcase found matching id: {showcase_id}"
             )
