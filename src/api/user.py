@@ -8,28 +8,13 @@ from typing import List, Self, Optional
 
 from datetime import date
 from psycopg import errors
-from enum import Enum
+from src.db.schemas import Color, GameStatus, TimeControl, GameModel, Showcase
 
 router = APIRouter(
     prefix="/user",
     tags=["user"],
     dependencies=[Depends(auth.get_api_key)],
 )
-
-class Color(str, Enum):
-    black = "black"
-    white = "white"
-
-class TimeControl(str, Enum):
-    classical = "classical"
-    rapid = "rapid"
-    blitz = "blitz"
-    bullet = "bullet"
-
-class GameStatus(str, Enum):
-    win = "win"
-    loss = "loss"
-    draw = "draw"
 
 class GameSubmitData(BaseModel):
     color: Color
@@ -38,32 +23,6 @@ class GameSubmitData(BaseModel):
     opponent_id: int
     time_in_ms: int = Field(ge=0, description="Time must be non-zero and non-negative")
     date_played: date
-
-
-class GameModel(BaseModel):
-    black: int
-    white: int
-    winner: Color | None
-    time_control: TimeControl
-    duration_in_ms: int = Field(
-        ge=0, description="Time must be non-zero and non-negative"
-    )
-    date_played: date
-
-    @model_validator(mode="after")
-    def validate_color(self) -> Self:
-        if self.black == self.white:
-            raise ValueError("the same player can't be both black and white'")
-        return self
-
-
-class Showcase(BaseModel):
-    created_by: int
-    title: str
-    views: int
-    caption: str
-    date_created: date
-    game_id: int
 
 
 # TODO: WRITE TEST
@@ -89,14 +48,14 @@ def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
     )
 
 
-@router.post("/games/{user_id}/submit", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/games/{user_id}", status_code=status.HTTP_201_CREATED)
 def submit_game(user_id: int, submission_data: GameSubmitData):
     game_data = create_game_model(user_id, submission_data)
     print(f"Adding game data: {game_data}")
 
     with db.engine.begin() as connection:
         try:
-            connection.execute(
+            new_id = connection.execute(
                 sqlalchemy.text(
                     """
                     INSERT INTO games (black, white, winner, time_control, duration_in_ms, date_played)
@@ -123,13 +82,17 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
                         "date": game_data.date_played
                     }
                 ],
-            )
+            ).one()
         except sqlalchemy.exc.IntegrityError as e:
             if isinstance(e.orig, errors.ForeignKeyViolation):
                 raise HTTPException(
                     status_code=422,
                     detail=f"Bad player IDs"
                 )
+    return {
+        "message": f"New game added to user ID: {user_id}",
+        "new_game_id": new_id.id
+    }
 
 
 
@@ -193,7 +156,7 @@ def get_history(user_id: int) -> List[GameModel]:
 @router.get("/showcases/{user_id}", response_model=List[Showcase])
 def get_user_showcases(user_id: int) -> List[Showcase]:
     with db.engine.begin() as connection:
-        showcases = connection.execute(
+        results = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT created_by, title, views, caption, date_created, game_id
@@ -204,25 +167,36 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
             ),
             {"user_id": user_id},
         ).all()
-    return showcases
+    return [
+        Showcase(
+            created_by=row.created_by,
+            title=row.title,
+            views=row.views,
+            caption=row.caption,
+            date_created=row.date_created,
+            game_id=row.game_id
+        )
+        for row in results
+    ]
 
-@router.post("/register", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(username: str, user_email: Optional[str] = Query(default=None)):
     with db.engine.begin() as connection:
         try: 
-            connection.execute(
+            new_user = connection.execute(
                 sqlalchemy.text(
                     """
                     INSERT INTO users(username, email, register_date)
                     VALUES
                         (:username, LOWER(:user_email), DEFAULT)
+                    RETURNING id, register_date
                     """
                 ),
                 {
                     "username": username,
                     "user_email": user_email
                 }
-            )
+            ).one()
         except sqlalchemy.exc.IntegrityError as e:
             if isinstance(e.orig, errors.UniqueViolation):
                 print("TESt")
@@ -230,5 +204,12 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
                     status_code=422,
                     detail="User or email already in use"
                 )
-                
+            
+    return {
+        "message": f"New user registered!",
+        "uid": new_user.id,
+        "username": username,
+        "email": user_email,
+        "registered_at": new_user.register_date
+    }
 
