@@ -29,8 +29,8 @@ class GameSubmitData(BaseModel):
 class UserViews(BaseModel):
     username: str
     email: Optional[str]
-    views: int
-    likes: int
+    avg_views: float
+    total_likes: int
 
 
 # TODO: WRITE TEST
@@ -217,22 +217,31 @@ def get_trending_users(week_range: int):
         result = connection.execute(
             sqlalchemy.text(
                 """
-                WITH avg_views as (
+                WITH view_data as (
                     SELECT
-                        u.id,
-                        COALESCE(AVG(views), 0) as avg_views
-                    FROM users as u
-                    JOIN showcases as s on u.id = s.created_by
-                    WHERE (now()::date - s.date_created::date)/7 <= :range
-                    GROUP BY u.id
+                        s.id as showcase_id,
+                        COALESCE(COUNT(sv.id), 0) as views
+                    FROM showcases as s
+                    LEFT JOIN showcase_views as sv on s.id = sv.showcase_id
+                    WHERE (now()::date - sv.view_timestamp::date)/7 <= :range
+                    GROUP BY s.id
+                ),
+                avg_views as (
+                    SELECT
+                        s.created_by as user_id,
+                        COALESCE(AVG(vd.views), 0) as avg_views
+                    FROM showcases as s
+                    JOIN view_data as vd on s.id = vd.showcase_id
+                    GROUP BY s.created_by
                 ),
                 total_likes as (
                     SELECT
-                        s.created_by,
-                        COALESCE(COUNT(sl.id), 0) as total_likes
+                        s.created_by as user_id,
+                        COALESCE(COUNT(sv.liked), 0) as total_likes
                     FROM showcases as s
-                    LEFT JOIN showcase_likes as sl on sl.showcase_id = s.id
-                    WHERE (now()::date - s.date_created::date)/7 <= :range
+                    LEFT JOIN showcase_views as sv on sv.showcase_id = s.id
+                    WHERE (now()::date - sv.liked_timestamp::date)/7 <= :range
+                        AND sv.liked = True
                     GROUP BY s.created_by
                 )
                 SELECT
@@ -241,19 +250,22 @@ def get_trending_users(week_range: int):
                     av.avg_views,
                     tl.total_likes
                 FROM users as u
-                JOIN avg_views as av on u.id = av.id
-                JOIN total_likes as tl on tl.created_by = u.id
+                JOIN avg_views as av on u.id = av.user_id
+                JOIN total_likes as tl on u.id = tl.user_id
                 ORDER BY total_likes DESC, avg_views DESC
                 """
             ),
             {"range": week_range},
         ).all()
+
+    for row in result:
+        print(row.username, row.email, row.avg_views, row.total_likes)
     return [
         UserViews(
             username=row.username,
             email=row.email,
-            views=row.avg_views,
-            likes=row.total_likes,
+            avg_views=row.avg_views,
+            total_likes=row.total_likes,
         )
         for row in result
     ]

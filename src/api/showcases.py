@@ -297,25 +297,29 @@ def view_showcase(showcase_id: int, user_id: int):
 @router.put("/like/{showcase_id}", status_code=status.HTTP_200_OK)
 def like_showcase(showcase_id: int, user_id: int):
     with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text(
-                """
-                UPDATE showcase_views
-                SET
-                    liked = True,
-                    liked_timestamp = now()
-                WHERE
-                    showcase_id = :SId
-                    AND user_id = :UId
-                RETURNING id
-                """
-            ),
-            {"SId": showcase_id, "UId": user_id},
-        ).one_or_none()
+        try:
+            result = connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE showcase_views
+                    SET
+                        liked = True,
+                        liked_timestamp = now()
+                    WHERE
+                        showcase_id = :SId
+                        AND user_id = :UId
+                        AND liked = False
+                    RETURNING id
+                    """
+                ),
+                {"SId": showcase_id, "UId": user_id},
+            ).one()
 
-        if not result:
-            raise HTTPException(status_code=404, detail="Bad references")
-        else:
-            return {
-                "message": f"User ID: {user_id} successfully liked Showcase ID: {showcase_id}"
-            }
+            if not result:
+                raise HTTPException(status_code=208, detail="Already liked")
+            else:
+                return {
+                    "message": f"User ID: {user_id} successfully liked Showcase ID: {showcase_id}"
+                }
+        except sqlalchemy.exc.NoResultFound:
+            raise HTTPException(status_code=404, detail="Cannot find ID(s)")

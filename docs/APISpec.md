@@ -216,8 +216,8 @@ Response:
     {
         "username": "string",
         "email": "string",
-        "views": "integer",
-        "likes": "integer"
+        "avg_views": "float",
+        "total_likes": "integer"
     }
 ]
 ```
