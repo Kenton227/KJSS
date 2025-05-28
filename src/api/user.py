@@ -26,6 +26,13 @@ class GameSubmitData(BaseModel):
     date_played: date
 
 
+class UserViews(BaseModel):
+    username: str
+    email: Optional[str]
+    avg_views: float
+    total_likes: int
+
+
 # TODO: WRITE TEST
 def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
     if game_data.color == "white":
@@ -201,3 +208,64 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
         "email": user_email,
         "registered_at": new_user.register_date,
     }
+
+
+@router.get("/trending", response_model=List[UserViews])
+def get_trending_users(week_range: int):
+    """Find the users who have gotten the most views & likes in the last n weeks"""
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text(
+                """
+                WITH view_data as (
+                    SELECT
+                        s.id as showcase_id,
+                        COALESCE(COUNT(sv.id), 0) as views
+                    FROM showcases as s
+                    LEFT JOIN showcase_views as sv on s.id = sv.showcase_id
+                    WHERE (now()::date - sv.view_timestamp::date)/7 <= :range
+                    GROUP BY s.id
+                ),
+                avg_views as (
+                    SELECT
+                        s.created_by as user_id,
+                        COALESCE(AVG(vd.views), 0) as avg_views
+                    FROM showcases as s
+                    JOIN view_data as vd on s.id = vd.showcase_id
+                    GROUP BY s.created_by
+                ),
+                total_likes as (
+                    SELECT
+                        s.created_by as user_id,
+                        COALESCE(COUNT(sv.liked), 0) as total_likes
+                    FROM showcases as s
+                    LEFT JOIN showcase_views as sv on sv.showcase_id = s.id
+                    WHERE (now()::date - sv.liked_timestamp::date)/7 <= :range
+                        AND sv.liked = True
+                    GROUP BY s.created_by
+                )
+                SELECT
+                    u.username,
+                    u.email,
+                    av.avg_views,
+                    tl.total_likes
+                FROM users as u
+                JOIN avg_views as av on u.id = av.user_id
+                JOIN total_likes as tl on u.id = tl.user_id
+                ORDER BY total_likes DESC, avg_views DESC
+                """
+            ),
+            {"range": week_range},
+        ).all()
+
+    for row in result:
+        print(row.username, row.email, row.avg_views, row.total_likes)
+    return [
+        UserViews(
+            username=row.username,
+            email=row.email,
+            avg_views=row.avg_views,
+            total_likes=row.total_likes,
+        )
+        for row in result
+    ]
