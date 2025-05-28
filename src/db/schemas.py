@@ -3,9 +3,11 @@ from pydantic import BaseModel, Field, model_validator
 from typing import Self
 from datetime import date
 
+
 class Color(str, Enum):
     black = "black"
     white = "white"
+
 
 class TimeControl(str, Enum):
     classical = "classical"
@@ -13,11 +15,11 @@ class TimeControl(str, Enum):
     blitz = "blitz"
     bullet = "bullet"
 
+
 class GameStatus(str, Enum):
     win = "win"
     loss = "loss"
     draw = "draw"
-
 
 
 class GameModel(BaseModel):
@@ -35,7 +37,8 @@ class GameModel(BaseModel):
         if self.black == self.white:
             raise ValueError("the same player can't be both black and white'")
         return self
-    
+
+
 class Showcase(BaseModel):
     created_by: int
     title: str

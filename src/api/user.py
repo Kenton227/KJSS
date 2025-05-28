@@ -16,6 +16,7 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+
 class GameSubmitData(BaseModel):
     color: Color
     game_status: GameStatus
@@ -27,14 +28,13 @@ class GameSubmitData(BaseModel):
 
 # TODO: WRITE TEST
 def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
-
     if game_data.color == "white":
         black_player, white_player = game_data.opponent_id, user_id
         winner = "white" if game_data.game_status == "win" else "black"
     else:
         black_player, white_player = user_id, game_data.opponent_id
         winner = "black" if game_data.game_status == "win" else "white"
-    
+
     if game_data.game_status == "draw":
         winner = None
 
@@ -44,7 +44,7 @@ def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
         winner=winner,
         time_control=game_data.time_control,
         duration_in_ms=game_data.time_in_ms,
-        date_played=game_data.date_played
+        date_played=game_data.date_played,
     )
 
 
@@ -79,21 +79,17 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
                         "winner": game_data.winner if game_data.winner else "draw",
                         "time_control": game_data.time_control,
                         "time": game_data.duration_in_ms,
-                        "date": game_data.date_played
+                        "date": game_data.date_played,
                     }
                 ],
             ).one()
         except sqlalchemy.exc.IntegrityError as e:
             if isinstance(e.orig, errors.ForeignKeyViolation):
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Bad player IDs"
-                )
+                raise HTTPException(status_code=422, detail=f"Bad player IDs")
     return {
         "message": f"New game added to user ID: {user_id}",
-        "new_game_id": new_id.id
+        "new_game_id": new_id.id,
     }
-
 
 
 @router.get("/games/{user_id}", response_model=List[GameModel])
@@ -127,19 +123,15 @@ def get_history(user_id: int) -> List[GameModel]:
                     WHERE id = :user_id
                     """
                 ),
-                [{"user_id": user_id}]
+                [{"user_id": user_id}],
             ).one_or_none()
 
             if not user_confirm:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"User does not exist"
-                )
+                raise HTTPException(status_code=404, detail=f"User does not exist")
             raise HTTPException(
-                status_code=404,
-                detail=f"User has not recorded any games"
+                status_code=404, detail=f"User has not recorded any games"
             )
-    
+
     return [
         GameModel(
             black=row.black,
@@ -147,7 +139,7 @@ def get_history(user_id: int) -> List[GameModel]:
             winner=row.winner,
             time_control=row.time_control,
             duration_in_ms=row.duration_in_ms,
-            date_played=row.date_played
+            date_played=row.date_played,
         )
         for row in result
     ]
@@ -174,15 +166,16 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
             views=row.views,
             caption=row.caption,
             date_created=row.date_created,
-            game_id=row.game_id
+            game_id=row.game_id,
         )
         for row in results
     ]
 
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(username: str, user_email: Optional[str] = Query(default=None)):
     with db.engine.begin() as connection:
-        try: 
+        try:
             new_user = connection.execute(
                 sqlalchemy.text(
                     """
@@ -192,24 +185,19 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
                     RETURNING id, register_date
                     """
                 ),
-                {
-                    "username": username,
-                    "user_email": user_email
-                }
+                {"username": username, "user_email": user_email},
             ).one()
         except sqlalchemy.exc.IntegrityError as e:
             if isinstance(e.orig, errors.UniqueViolation):
                 print("TESt")
                 raise HTTPException(
-                    status_code=422,
-                    detail="User or email already in use"
+                    status_code=422, detail="User or email already in use"
                 )
-            
+
     return {
         "message": f"New user registered!",
         "uid": new_user.id,
         "username": username,
         "email": user_email,
-        "registered_at": new_user.register_date
+        "registered_at": new_user.register_date,
     }
-

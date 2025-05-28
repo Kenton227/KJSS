@@ -20,6 +20,7 @@ class ReportRequest(BaseModel):
     report_brief: str = Field(..., min_length=1)
     report_details: str | None = Field(..., min_length=1)
 
+
 class Report(BaseModel):
     user_id: int
     showcase_id: Optional[int]
@@ -51,7 +52,9 @@ def post_report(report_data: ReportRequest) -> None:
             ),
             {
                 "user_id": report_data.user_id,
-                "showcase_id": report_data.showcase_id if report_data.showcase_id >= 0 else None,
+                "showcase_id": report_data.showcase_id
+                if report_data.showcase_id >= 0
+                else None,
                 "report_brief": report_data.report_brief,
                 "report_details": report_data.report_details,
             },
@@ -59,8 +62,9 @@ def post_report(report_data: ReportRequest) -> None:
     return {
         "message": "Report successfully sent!",
         "report": new_report.report_brief,
-        "created_at": new_report.date_reported
+        "created_at": new_report.date_reported,
     }
+
 
 @router.get("/", response_model=List[Report])
 def get_report(report_id: Optional[int] = None):
@@ -76,15 +80,11 @@ def get_report(report_id: Optional[int] = None):
                 FROM reports
                 WHERE id = :RId
             """
-        results = connection.execute(
-            sqlalchemy.text(query),
-            [{ "RId": report_id}]
-        ).all()
-    
+        results = connection.execute(sqlalchemy.text(query), [{"RId": report_id}]).all()
+
         if report_id and not results:
             raise HTTPException(
-                status_code=404,
-                detail=f"No report found with matching ID: {report_id}"
+                status_code=404, detail=f"No report found with matching ID: {report_id}"
             )
 
     return [
@@ -93,7 +93,7 @@ def get_report(report_id: Optional[int] = None):
             showcase_id=row.showcase_id,
             report_brief=row.report_brief,
             date_created=row.date_reported.date(),
-            report_details=row.report_details
+            report_details=row.report_details,
         )
         for row in results
     ]

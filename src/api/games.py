@@ -11,6 +11,7 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+
 @router.get("/{game_id}", response_model=GameModel)
 def get_game(game_id: int):
     # retrieves black and white player id given a game id
@@ -37,8 +38,7 @@ def get_game(game_id: int):
         ).one_or_none()
         if game_data is None:
             raise HTTPException(
-                status_code=404,
-                detail=f"No game found with id: {game_id}"
+                status_code=404, detail=f"No game found with id: {game_id}"
             )
 
     return GameModel(
@@ -47,11 +47,12 @@ def get_game(game_id: int):
         winner=Color[game_data.winner] if game_data.winner != "draw" else None,
         time_control=game_data.time_control,
         duration_in_ms=game_data.duration_in_ms,
-        date_played=game_data.date_played.date()
+        date_played=game_data.date_played.date(),
     )
 
+
 @router.get("/games/search", response_model=List[GameModel])
-def search_games(player_query:str="", time_control_query:str=""):
+def search_games(player_query: str = "", time_control_query: str = ""):
     with db.engine.begin() as connection:
         results = connection.execute(
             sqlalchemy.text(
@@ -73,9 +74,9 @@ def search_games(player_query:str="", time_control_query:str=""):
                 ORDER BY date_played DESC
                 """
             ),
-            [{ "player_query": player_query, "time_query": time_control_query }]
+            [{"player_query": player_query, "time_query": time_control_query}],
         ).all()
-    
+
     return [
         GameModel(
             black=row.black,
@@ -83,7 +84,7 @@ def search_games(player_query:str="", time_control_query:str=""):
             winner=Color[row.winner] if row.winner != "draw" else None,
             time_control=row.time_control,
             duration_in_ms=row.duration_in_ms,
-            date_played=row.date_played.date()
+            date_played=row.date_played.date(),
         )
         for row in results
     ]
