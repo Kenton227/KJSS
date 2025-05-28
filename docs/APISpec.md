@@ -197,3 +197,48 @@ Response:
     "success": "boolean"
 }
 ```
+
+# Complex Endpoints
+1. `GET /user/trending`
+2. `PUT /admin/autowarn`
+
+### C.1 Top Users of the Week
+Returns users with the highest total views and average views within a range of recent weeks.
+
+Request:
+```
+(Query) "week_range": "integer"
+```
+
+Response:
+```
+[
+    {
+        "username": "string",
+        "email": "string",
+        "views": "integer",
+        "likes": "integer"
+    }
+]
+```
+
+
+### C.2 Automatically Warn Users
+Automatically set the status of user(s) with a certain number of reports or higher to 'Probation'
+
+Request:
+```
+(Query) "tolerance": "integer"
+(Query) "user_id: "integer"
+```
+
+Response:
+```
+{
+    "affected_users": [
+        "username": "string"
+    ]
+}
+```
+
+

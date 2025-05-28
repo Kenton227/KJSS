@@ -236,7 +236,7 @@ def delete_comment(comment_id: int):
             raise HTTPException(status_code=404, detail="Comment not found")
 
 
-@router.get("/{showcase_id}")
+@router.get("/{showcase_id}", response_model=Showcase)
 def get_showcase(showcase_id: int):
     with db.engine.begin() as connection:
         try:
@@ -264,3 +264,58 @@ def get_showcase(showcase_id: int):
             raise HTTPException(
                 status_code=404, detail=f"No showcase found matching id: {showcase_id}"
             )
+
+
+@router.post("/view/{showcase_id}", status_code=status.HTTP_201_CREATED)
+def view_showcase(showcase_id: int, user_id: int):
+    with db.engine.begin() as connection:
+        try:
+            result = connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO showcase_views (showcase_id, user_id, liked_timestamp)
+                    VALUES (:SId, :UId, NULL)
+                    ON CONFLICT
+                        DO NOTHING
+                    RETURNING id
+                    """
+                ),
+                {"SId": showcase_id, "UId": user_id},
+            ).one_or_none()
+
+            if not result:
+                raise HTTPException(status_code=208, detail="Already viewed")
+            else:
+                return {
+                    "message": f"User ID: {user_id} successfully viewed Showcase ID: {showcase_id}"
+                }
+        except sqlalchemy.exc.IntegrityError as e:
+            if isinstance(e.orig, errors.ForeignKeyViolation):
+                raise HTTPException(status_code=404, detail="Cannot find ID(s)")
+
+
+@router.put("/like/{showcase_id}", status_code=status.HTTP_200_OK)
+def like_showcase(showcase_id: int, user_id: int):
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text(
+                """
+                UPDATE showcase_views
+                SET
+                    liked = True,
+                    liked_timestamp = now()
+                WHERE
+                    showcase_id = :SId
+                    AND user_id = :UId
+                RETURNING id
+                """
+            ),
+            {"SId": showcase_id, "UId": user_id},
+        ).one_or_none()
+
+        if not result:
+            raise HTTPException(status_code=404, detail="Bad references")
+        else:
+            return {
+                "message": f"User ID: {user_id} successfully liked Showcase ID: {showcase_id}"
+            }

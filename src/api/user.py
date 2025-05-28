@@ -26,6 +26,13 @@ class GameSubmitData(BaseModel):
     date_played: date
 
 
+class UserViews(BaseModel):
+    username: str
+    email: Optional[str]
+    views: int
+    likes: int
+
+
 # TODO: WRITE TEST
 def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
     if game_data.color == "white":
@@ -201,3 +208,52 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
         "email": user_email,
         "registered_at": new_user.register_date,
     }
+
+
+@router.get("/trending", response_model=List[UserViews])
+def get_trending_users(week_range: int):
+    """Find the users who have gotten the most views & likes in the last n weeks"""
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text(
+                """
+                WITH avg_views as (
+                    SELECT
+                        u.id,
+                        COALESCE(AVG(views), 0) as avg_views
+                    FROM users as u
+                    JOIN showcases as s on u.id = s.created_by
+                    WHERE (now()::date - s.date_created::date)/7 <= :range
+                    GROUP BY u.id
+                ),
+                total_likes as (
+                    SELECT
+                        s.created_by,
+                        COALESCE(COUNT(sl.id), 0) as total_likes
+                    FROM showcases as s
+                    LEFT JOIN showcase_likes as sl on sl.showcase_id = s.id
+                    WHERE (now()::date - s.date_created::date)/7 <= :range
+                    GROUP BY s.created_by
+                )
+                SELECT
+                    u.username,
+                    u.email,
+                    av.avg_views,
+                    tl.total_likes
+                FROM users as u
+                JOIN avg_views as av on u.id = av.id
+                JOIN total_likes as tl on tl.created_by = u.id
+                ORDER BY total_likes DESC, avg_views DESC
+                """
+            ),
+            {"range": week_range},
+        ).all()
+    return [
+        UserViews(
+            username=row.username,
+            email=row.email,
+            views=row.avg_views,
+            likes=row.total_likes,
+        )
+        for row in result
+    ]

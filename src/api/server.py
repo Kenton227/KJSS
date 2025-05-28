@@ -1,10 +1,5 @@
 from fastapi import FastAPI
-from src.api import (
-    games,
-    user,
-    showcases,
-    reports,
-)
+from src.api import games, user, showcases, reports, admin
 from starlette.middleware.cors import CORSMiddleware
 
 description = """
@@ -43,13 +38,13 @@ app.include_router(games.router)
 app.include_router(showcases.router)
 app.include_router(user.router)
 app.include_router(reports.router)
+app.include_router(admin.router)
 
 # app.include_router(inventory.router)
 # app.include_router(carts.router)
 # app.include_router(catalog.router)
 # app.include_router(bottler.router)
 # app.include_router(barrels.router)
-# app.include_router(admin.router)
 # app.include_router(info.router)
 
 
