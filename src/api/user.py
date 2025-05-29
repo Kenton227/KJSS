@@ -196,7 +196,6 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
             ).one()
         except sqlalchemy.exc.IntegrityError as e:
             if isinstance(e.orig, errors.UniqueViolation):
-                print("TESt")
                 raise HTTPException(
                     status_code=422, detail="User or email already in use"
                 )
