@@ -49,16 +49,7 @@ class Comment(BaseModel):
     content: str = Field(..., min_length=1)
 
 
-class showcase_search_result(BaseModel):
-    showcase_id: int
-    user_id: int
-    username: str
-    title: str
-    date_created: date
-    caption: str
-
-
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
     with db.engine.begin() as connection:
         try:
@@ -247,35 +238,6 @@ def delete_comment(comment_id: int):
             raise HTTPException(status_code=404, detail="Comment not found")
 
 
-@router.get("/{showcase_id}", response_model=Showcase)
-def get_showcase(showcase_id: int):
-    with db.engine.begin() as connection:
-        try:
-            result = connection.execute(
-                sqlalchemy.text(
-                    """
-                    SELECT created_by, title, views, caption, date_created, game_id
-                    FROM showcases
-                    WHERE id = :showcase_id
-                    ORDER BY date_created DESC
-                    """
-                ),
-                {"showcase_id": showcase_id},
-            ).one()
-
-            return Showcase(
-                created_by=result.created_by,
-                title=result.title,
-                views=result.views,
-                caption=result.caption,
-                date_created=result.date_created,
-                game_id=result.game_id,
-            )
-        except sqlalchemy.exc.NoResultFound:
-            raise HTTPException(
-                status_code=404, detail=f"No showcase found matching id: {showcase_id}"
-            )
-
 
 @router.post("/view/{showcase_id}", status_code=status.HTTP_201_CREATED)
 def view_showcase(showcase_id: int, user_id: int):
@@ -334,3 +296,66 @@ def like_showcase(showcase_id: int, user_id: int):
                 }
         except sqlalchemy.exc.NoResultFound:
             raise HTTPException(status_code=404, detail="Cannot find ID(s)")
+        
+@router.get("/search", response_model=List[Showcase])
+def search_showcases(user_query:str = "", sc_query:str = ""):
+    with db.engine.begin() as connection:
+        results = connection.execute(
+            sqlalchemy.text(
+                """
+                    SELECT
+                        created_by,
+                        title,
+                        caption,
+                        date_created,
+                        game_id
+                    FROM showcases as s
+                    join users as u on s.created_by = u.id
+                    WHERE
+                        (title ILIKE '%' || :sc_query || '%'
+                            OR caption ILIKE '%' || :sc_query || '%')
+                        AND username ILIKE '%' || :u_query || '%'
+                """
+            ),
+            { "u_query": user_query, "sc_query": sc_query}
+        ).all()
+
+    return [
+        Showcase(
+            created_by=row.created_by,
+            title=row.title,
+            caption=row.caption,
+            date_created=row.date_created,
+            game_id=row.game_id
+        )
+        for row in results
+    ]
+
+
+@router.get("/{showcase_id}", response_model=Showcase)
+def get_showcase(showcase_id: int):
+    with db.engine.begin() as connection:
+        try:
+            result = connection.execute(
+                sqlalchemy.text(
+                    """
+                    SELECT created_by, title, caption, date_created, game_id
+                    FROM showcases
+                    WHERE id = :showcase_id
+                    ORDER BY date_created DESC
+                    """
+                ),
+                {"showcase_id": showcase_id},
+            ).one()
+
+            return Showcase(
+                created_by=result.created_by,
+                title=result.title,
+                caption=result.caption,
+                date_created=result.date_created,
+                game_id=result.game_id,
+            )
+        except sqlalchemy.exc.NoResultFound:
+            raise HTTPException(
+                status_code=404, detail=f"No showcase found matching id: {showcase_id}"
+            )
