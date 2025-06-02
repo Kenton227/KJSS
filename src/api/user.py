@@ -143,7 +143,7 @@ def get_history(user_id: int) -> List[GameModel]:
         GameModel(
             black=row.black,
             white=row.white,
-            winner=row.winner,
+            winner=row.winner if row.winner != 'draw' else None,
             time_control=row.time_control,
             duration_in_ms=row.duration_in_ms,
             date_played=row.date_played,
