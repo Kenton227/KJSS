@@ -11,6 +11,7 @@ from psycopg import errors
 from datetime import datetime
 from src.db.schemas import Showcase
 from datetime import date
+from enum import Enum
 
 router = APIRouter(
     prefix="/showcases",
@@ -404,3 +405,48 @@ def get_showcase(showcase_id: int):
             raise HTTPException(
                 status_code=404, detail=f"No showcase found matching id: {showcase_id}"
             )
+
+
+class SortOrder(str, Enum):
+    asc = "asc"
+    desc = "desc"
+
+class getallShowcasesSortOptions(str, Enum):
+    title = "title"
+    date_created = "date_created"
+
+
+@router.get("/getshowcases", response_model= List[Showcase])
+def get_all_showcases(
+    sort_col: getallShowcasesSortOptions = getallShowcasesSortOptions.date_created,
+    sort_order: SortOrder = SortOrder.desc
+):
+    """
+    Gets all showcases.
+    Responses can be sorted by author
+    """
+    #list to hold all the showcases
+
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text(
+                f"""
+                SELECT created_by, title, views, caption, date_created, game_id
+                FROM showcases AS s
+                JOIN users as u on s.created_by = u.id
+                ORDER BY {sort_col.value} {sort_order.value}
+                """
+            )
+        ).all()
+
+        return [
+            Showcase(
+                created_by=row.created_by,
+                title=row.title,
+                views=row.views,
+                caption=row.caption,
+                date_created=row.date_created,
+                game_id=row.game_id
+            )
+            for row in result
+        ]
