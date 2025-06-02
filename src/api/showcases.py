@@ -238,7 +238,6 @@ def delete_comment(comment_id: int):
             raise HTTPException(status_code=404, detail="Comment not found")
 
 
-
 @router.post("/view/{showcase_id}", status_code=status.HTTP_201_CREATED)
 def view_showcase(showcase_id: int, user_id: int):
     with db.engine.begin() as connection:
@@ -296,9 +295,10 @@ def like_showcase(showcase_id: int, user_id: int):
                 }
         except sqlalchemy.exc.NoResultFound:
             raise HTTPException(status_code=404, detail="Cannot find ID(s)")
-        
+
+
 @router.get("/search", response_model=List[Showcase])
-def search_showcases(user_query:str = "", sc_query:str = ""):
+def search_showcases(user_query: str = "", sc_query: str = ""):
     with db.engine.begin() as connection:
         results = connection.execute(
             sqlalchemy.text(
@@ -317,7 +317,7 @@ def search_showcases(user_query:str = "", sc_query:str = ""):
                         AND username ILIKE '%' || :u_query || '%'
                 """
             ),
-            { "u_query": user_query, "sc_query": sc_query}
+            {"u_query": user_query, "sc_query": sc_query},
         ).all()
 
     return [
@@ -326,7 +326,7 @@ def search_showcases(user_query:str = "", sc_query:str = ""):
             title=row.title,
             caption=row.caption,
             date_created=row.date_created,
-            game_id=row.game_id
+            game_id=row.game_id,
         )
         for row in results
     ]
