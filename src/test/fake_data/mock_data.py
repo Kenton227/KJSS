@@ -20,14 +20,14 @@ import os
 from psycopg import errors
 
 # Add the project root to sys.path for importing database
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
 import src.database as db
 
 
 # User
-def gen_users() -> None:
-    result = generate_fake_users_chunked(100_000, 1000)
+def gen_users(desired: int = 100_000) -> None:
+    result = generate_fake_users_chunked(desired, 1000)
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text(
@@ -73,13 +73,13 @@ def gen_random_game(valid_ids: List[int]) -> Tuple:
 
 
 # Games
-def gen_games() -> None:
+def gen_games(desired: int = 150_000) -> None:
     with db.engine.begin() as connection:
         valid_ids = connection.execute(sqlalchemy.text("SELECT id FROM users")).all()
 
         valid_ids = [valid_id.id for valid_id in valid_ids]
 
-        games = [gen_random_game(valid_ids) for _ in range(150_000)]
+        games = [gen_random_game(valid_ids) for _ in range(desired)]
 
         try:
             connection.execute(
@@ -128,7 +128,7 @@ def gen_random_sc(valid_uids: List[int], valid_gids: List[int]) -> None:
 
 
 # Showcases
-def gen_showcases() -> None:
+def gen_showcases(desired: int = 150_000) -> None:
     with db.engine.begin() as connection:
         valid_uids = connection.execute(sqlalchemy.text("SELECT id FROM users")).all()
 
@@ -137,7 +137,7 @@ def gen_showcases() -> None:
         valid_uids = [valid_user.id for valid_user in valid_uids]
         valid_gids = [valid_game.id for valid_game in valid_gids]
 
-        showcases = [gen_random_sc(valid_uids, valid_gids) for _ in range(150_000)]
+        showcases = [gen_random_sc(valid_uids, valid_gids) for _ in range(desired)]
 
         try:
             connection.execute(
@@ -180,7 +180,7 @@ def gen_random_c(valid_scids: List[int], valid_uids: List[int]) -> Tuple:
 
 
 # Showcase comments
-def gen_comments() -> None:
+def gen_comments(desired: int = 250_000) -> None:
     with db.engine.begin() as connection:
         valid_uids = connection.execute(sqlalchemy.text("SELECT id FROM users")).all()
 
@@ -191,7 +191,7 @@ def gen_comments() -> None:
         valid_uids = [valid_user.id for valid_user in valid_uids]
         valid_sids = [valid_game.id for valid_game in valid_sids]
 
-        comments = [gen_random_c(valid_sids, valid_uids) for _ in range(250_000)]
+        comments = [gen_random_c(valid_sids, valid_uids) for _ in range(desired)]
 
         try:
             connection.execute(
@@ -223,7 +223,7 @@ def gen_random_v(valid_scids: List[int], valid_uids: List[int]) -> Tuple:
 
 
 # Showcase views
-def gen_views() -> None:
+def gen_views(desired: int = 300_000) -> None:
     with db.engine.begin() as connection:
         valid_uids = connection.execute(sqlalchemy.text("SELECT id FROM users")).all()
 
@@ -234,7 +234,7 @@ def gen_views() -> None:
         valid_uids = [valid_user.id for valid_user in valid_uids]
         valid_sids = [valid_game.id for valid_game in valid_sids]
 
-        views = [gen_random_v(valid_sids, valid_uids) for _ in range(300_000)]
+        views = [gen_random_v(valid_sids, valid_uids) for _ in range(desired)]
 
         try:
             # Insert liked views
@@ -287,7 +287,7 @@ def gen_random_r(id_pairs: List[Tuple[int]]) -> Tuple:
     return sinner, sc, brief, detail, status
 
 
-def gen_reports() -> None:
+def gen_reports(desired: int) -> None:
     with db.engine.begin() as connection:
         valid_ids = connection.execute(
             sqlalchemy.text(
@@ -304,7 +304,7 @@ def gen_reports() -> None:
 
         valid_id_pairs = [(valid_user.uid, valid_user.sid) for valid_user in valid_ids]
 
-        reports = [gen_random_r(valid_id_pairs) for _ in range(50_000)]
+        reports = [gen_random_r(valid_id_pairs) for _ in range(desired)]
 
         try:
             connection.execute(

@@ -33,7 +33,6 @@ class UserViews(BaseModel):
     total_likes: int
 
 
-# TODO: WRITE TEST
 def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
     if game_data.color == "white":
         black_player, white_player = game_data.opponent_id, user_id
