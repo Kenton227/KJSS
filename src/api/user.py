@@ -158,7 +158,7 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
         results = connection.execute(
             sqlalchemy.text(
                 """
-                SELECT created_by, title, views, caption, date_created, game_id
+                SELECT created_by, title, caption, date_created, game_id
                 FROM showcases
                 WHERE created_by = :user_id
                 ORDER BY date_created DESC
@@ -170,7 +170,6 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
         Showcase(
             created_by=row.created_by,
             title=row.title,
-            views=row.views,
             caption=row.caption,
             date_created=row.date_created,
             game_id=row.game_id,
@@ -257,8 +256,6 @@ def get_trending_users(week_range: int):
             {"range": week_range},
         ).all()
 
-    for row in result:
-        print(row.username, row.email, row.avg_views, row.total_likes)
     return [
         UserViews(
             username=row.username,

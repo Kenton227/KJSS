@@ -19,7 +19,7 @@ class AutoWarnResponse(BaseModel):
 @router.post("/autowarn", response_model=AutoWarnResponse)
 def do_autowarn(tolerance: int = 5, user_id: Optional[int] = None):
     """
-    Automatically set the status of user(s) with a specific number of recent reports to 'Probation'
+    Automatically set the status of user(s) with a specific number of recent reports to 'probation'
     """
     with db.engine.begin() as connection:
         if not user_id:
@@ -36,7 +36,7 @@ def do_autowarn(tolerance: int = 5, user_id: Optional[int] = None):
                 )
                 UPDATE users
                 SET
-                    status = 'Probation'
+                    status = 'probation'
                 FROM affected_users as au
                 WHERE users.id = au.user_id
                 RETURNING users.username
@@ -45,7 +45,7 @@ def do_autowarn(tolerance: int = 5, user_id: Optional[int] = None):
         else:
             query = """
                 UPDATE users
-                SET status = 'Probation'
+                SET status = 'probation'
                 WHERE id = :UId AND (
                     SELECT COUNT(*)
                     FROM reports
