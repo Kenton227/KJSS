@@ -42,6 +42,8 @@ class GameModel(BaseModel):
 class Showcase(BaseModel):
     created_by: int
     title: str
+    views: int
+    likes: int
     caption: str
     date_created: date
     game_id: int
