@@ -51,6 +51,12 @@ class Comment(BaseModel):
 
 @router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
+    """
+    Post a showcase to the database.
+    Showcases must be linked to an existing user ID.
+    If a title is not provided, the showcase will have the default value: "Untitled".
+    A caption is unnecessary.
+    """
     with db.engine.begin() as connection:
         try:
             new_showcase = connection.execute(
@@ -94,6 +100,12 @@ def post_showcase(showcase_data: ShowcaseRequest) -> None:
 
 @router.put("/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
 def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
+    """
+    Edits the string content of a showcase given by ID.
+    'String content' includes the title and/or caption.
+    If the provided title/caption is empty, it the current value will remain unaltered.
+    An empty edit (lacks new title and new caption) will return an error.
+    """
     with db.engine.begin() as connection:
         title_confirm = None
         caption_confirm = None
@@ -131,6 +143,11 @@ def edit_showcase(showcase_id: int, new_data: EditRequest) -> None:
 
 @router.post("/{showcase_id}/comment", status_code=status.HTTP_201_CREATED)
 def post_comment(comment_content: NewComment, showcase_id: int):
+    """
+    Add a new comment to a specific showcase specified by ID.
+    Comments cannot be empty.
+    Comments must reference a valid user by ID.
+    """
     with db.engine.begin() as connection:
         # makes sure comment string isn't empty
         if comment_content.comment_string == "":
@@ -175,6 +192,9 @@ def post_comment(comment_content: NewComment, showcase_id: int):
 
 @router.get("/{showcase_id}/comments", response_model=List[Comment])
 def get_comments(showcase_id: int):
+    """
+    Retrive all comments on a showcase specified by ID.
+    """
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text(
@@ -204,6 +224,10 @@ def get_comments(showcase_id: int):
 
 @router.delete("/{showcase_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_showcase(showcase_id: int):
+    """
+    Delete a showcase from the database, specified by ID.
+    Attached comments will also be deleted.
+    """
     with db.engine.begin() as connection:
         try:
             connection.execute(
@@ -222,6 +246,9 @@ def delete_showcase(showcase_id: int):
 
 @router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_comment(comment_id: int):
+    """
+    Delete a comment, specified by ID.
+    """
     with db.engine.begin() as connection:
         try:
             connection.execute(
@@ -240,6 +267,9 @@ def delete_comment(comment_id: int):
 
 @router.post("/view/{showcase_id}", status_code=status.HTTP_201_CREATED)
 def view_showcase(showcase_id: int, user_id: int):
+    """
+    Adds a view from a user to a showcase, specified by ID.
+    """
     with db.engine.begin() as connection:
         try:
             result = connection.execute(
@@ -268,6 +298,11 @@ def view_showcase(showcase_id: int, user_id: int):
 
 @router.put("/like/{showcase_id}", status_code=status.HTTP_200_OK)
 def like_showcase(showcase_id: int, user_id: int):
+    """
+    Add a like from a user to a showcase, specified by ID.
+    A user needs to have viewed a showcase before liking it.
+    There is no way to un-like a showcase.
+    """
     with db.engine.begin() as connection:
         try:
             result = connection.execute(
@@ -299,6 +334,13 @@ def like_showcase(showcase_id: int, user_id: int):
 
 @router.get("/search", response_model=List[Showcase])
 def search_showcases(user_query: str = "", sc_query: str = ""):
+    """
+    Retrives showcases that match the following optional queries:
+    - user_query: Searches showcases based on the author's username; shows results that contain query as a substring of the username.
+    - sc_query:  Searches text content (title and caption); shows results that contain query as a substring of either attributes.
+
+    Any empty query will not result in any filration of the data by that query.
+    """
     with db.engine.begin() as connection:
         results = connection.execute(
             sqlalchemy.text(
@@ -334,6 +376,9 @@ def search_showcases(user_query: str = "", sc_query: str = ""):
 
 @router.get("/{showcase_id}", response_model=Showcase)
 def get_showcase(showcase_id: int):
+    """
+    Retrieve a specific showcase by ID.
+    """
     with db.engine.begin() as connection:
         try:
             result = connection.execute(
