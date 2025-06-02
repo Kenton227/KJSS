@@ -57,12 +57,17 @@ def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
 
 @router.post("/games/{user_id}", status_code=status.HTTP_201_CREATED)
 def submit_game(user_id: int, submission_data: GameSubmitData):
+    """
+    Users can submit their games into record.
+    Games are submitted from the user's perspective, taking in their color played and whether or not they win/lose.
+    The opponent's id must be different than the user's own.
+    """
     game_data = create_game_model(user_id, submission_data)
     print(f"Adding game data: {game_data}")
 
     with db.engine.begin() as connection:
         try:
-            new_id = connection.execute(
+            new_id = connection.execute(  # Inserting a duplicate game will return the existing game ID (No actual way to proc a unique violation tho)
                 sqlalchemy.text(
                     """
                     INSERT INTO games (black, white, winner, time_control, duration_in_ms, date_played)
@@ -90,7 +95,7 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
                     }
                 ],
             ).one()
-        except sqlalchemy.exc.IntegrityError as e:
+        except sqlalchemy.exc.IntegrityError as e:  # Catch foreign key violations
             if isinstance(e.orig, errors.ForeignKeyViolation):
                 raise HTTPException(status_code=422, detail=f"Bad player IDs")
     return {
@@ -100,7 +105,11 @@ def submit_game(user_id: int, submission_data: GameSubmitData):
 
 
 @router.get("/games/{user_id}", response_model=List[GameModel])
-def get_history(user_id: int) -> List[GameModel]:
+def get_game_history(user_id: int) -> List[GameModel]:
+    """
+    Retrieve the last 20 games recorded involving specific user.
+    Response is sorted by date starting with most recent.
+    """
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text(
@@ -121,7 +130,9 @@ def get_history(user_id: int) -> List[GameModel]:
             [{"user_id": user_id}],
         ).all()
 
-        if not result:
+        if (
+            not result
+        ):  # If empty result, check if its because there's no user or user has no games
             user_confirm = connection.execute(
                 sqlalchemy.text(
                     """
@@ -154,6 +165,10 @@ def get_history(user_id: int) -> List[GameModel]:
 
 @router.get("/showcases/{user_id}", response_model=List[Showcase])
 def get_user_showcases(user_id: int) -> List[Showcase]:
+    """
+    Get all showcases posted by a specific user.
+    Response is sorted by most recently created.
+    """
     with db.engine.begin() as connection:
         results = connection.execute(
             sqlalchemy.text(
@@ -180,6 +195,11 @@ def get_user_showcases(user_id: int) -> List[Showcase]:
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(username: str, user_email: Optional[str] = Query(default=None)):
+    """
+    Register a new user into the database.
+    A username is required, an email is optional.
+    Usernames and emails must be unique from all others stored, if not a 422 error will be returned.
+    """
     with db.engine.begin() as connection:
         try:
             new_user = connection.execute(
@@ -193,7 +213,9 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
                 ),
                 {"username": username, "user_email": user_email},
             ).one()
-        except sqlalchemy.exc.IntegrityError as e:
+        except (
+            sqlalchemy.exc.IntegrityError
+        ) as e:  # Return a warning if user/email already exists
             if isinstance(e.orig, errors.UniqueViolation):
                 raise HTTPException(
                     status_code=422, detail="User or email already in use"
@@ -209,8 +231,8 @@ def register_user(username: str, user_email: Optional[str] = Query(default=None)
 
 
 @router.get("/trending", response_model=List[UserViews])
-def get_trending_users(week_range: int):
-    """Find the users who have gotten the most views & likes in the last n weeks"""
+def get_trending_users(top_n: int, week_range: int):
+    """Find the top 'top_n' users who have gotten the most views & likes in the last 'week_range' weeks"""
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text(
@@ -251,9 +273,10 @@ def get_trending_users(week_range: int):
                 JOIN avg_views as av on u.id = av.user_id
                 JOIN total_likes as tl on u.id = tl.user_id
                 ORDER BY total_likes DESC, avg_views DESC
+                LIMIT :n
                 """
             ),
-            {"range": week_range},
+            {"range": week_range, "n": top_n},
         ).all()
 
     return [

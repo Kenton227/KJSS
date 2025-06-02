@@ -14,7 +14,9 @@ router = APIRouter(
 
 @router.get("/{game_id}", response_model=GameModel)
 def get_game(game_id: int):
-    # retrieves black and white player id given a game id
+    """
+    Retrieve a specific game by ID.
+    """
     with db.engine.begin() as connection:
         game_data = connection.execute(
             sqlalchemy.text(
@@ -36,6 +38,8 @@ def get_game(game_id: int):
                 }
             ],
         ).one_or_none()
+
+        # Return 404 on no result found
         if game_data is None:
             raise HTTPException(
                 status_code=404, detail=f"No game found with id: {game_id}"
@@ -53,6 +57,13 @@ def get_game(game_id: int):
 
 @router.get("/games/search", response_model=List[GameModel])
 def search_games(player_query: str = "", time_control_query: str = ""):
+    """
+    Retrieves games that match the following optional queries:
+    - player_query: Searches for either player's usernames that contain query as a substring
+    - time_control_query: Searches for time controls that contain query as a substring. (There are only 4 options for time controls: classical, rapid, blitz, bullet)
+
+    Any empty query will not result in any filtration of the data by that query.
+    """
     with db.engine.begin() as connection:
         results = connection.execute(
             sqlalchemy.text(
