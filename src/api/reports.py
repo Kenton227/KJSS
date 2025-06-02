@@ -31,6 +31,11 @@ class Report(BaseModel):
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def post_report(report_data: ReportRequest) -> None:
+    """
+    Post a report to the database.
+    Reports require a brief (title) and the user ID of the reportee.
+    A specific showcase ID may optionally be reported, and the user ID should match accordingly.
+    """
     with db.engine.begin() as connection:
         new_report = connection.execute(
             sqlalchemy.text(
@@ -68,13 +73,19 @@ def post_report(report_data: ReportRequest) -> None:
 
 @router.get("/", response_model=List[Report])
 def get_report(report_id: Optional[int] = None):
+    """
+    Retrieve a report using a specific report ID.
+    Alternatively, if not ID is provided, retrieve all reports sorted by most recently filed.
+    An empty result for an unspecified call will return an empty array, while a specified call will return a 404.
+    """
     with db.engine.begin() as connection:
-        if not report_id:
+        if not report_id:  # If no ID specified, query for ALL reports
             query = """
                 SELECT user_id, showcase_id, report_brief, date_reported, report_details
                 FROM reports
+                ORDER BY date_reported
             """
-        else:
+        else:  # Query for specific report ID
             query = """
                 SELECT user_id, showcase_id, report_brief, date_reported, report_details
                 FROM reports
@@ -82,7 +93,9 @@ def get_report(report_id: Optional[int] = None):
             """
         results = connection.execute(sqlalchemy.text(query), [{"RId": report_id}]).all()
 
-        if report_id and not results:
+        if (
+            report_id and not results
+        ):  # Only return 404 if an ID is specified (returning an empty for querying ALL is ok)
             raise HTTPException(
                 status_code=404, detail=f"No report found with matching ID: {report_id}"
             )
