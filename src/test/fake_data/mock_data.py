@@ -287,7 +287,7 @@ def gen_random_r(id_pairs: List[Tuple[int]]) -> Tuple:
     return sinner, sc, brief, detail, status
 
 
-def gen_reports(desired: int) -> None:
+def gen_reports(desired: int = 50_000) -> None:
     with db.engine.begin() as connection:
         valid_ids = connection.execute(
             sqlalchemy.text(

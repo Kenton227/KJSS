@@ -49,6 +49,16 @@ class Comment(BaseModel):
     date_posted: datetime
     content: str = Field(..., min_length=1)
 
+class SortOrder(str, Enum):
+    asc = "asc"
+    desc = "desc"
+
+class ShowcasesSortOptions(str, Enum):
+    title = "title"
+    view_count = "view_count"
+    like_count = "like_count"
+    date_created = "date_created"
+
 
 @router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
@@ -194,7 +204,7 @@ def post_comment(comment_content: NewComment, showcase_id: int):
 @router.get("/{showcase_id}/comments", response_model=List[Comment])
 def get_comments(showcase_id: int):
     """
-    Retrive all comments on a showcase specified by ID.
+    Retrieve all comments on a showcase specified by ID.
     """
     with db.engine.begin() as connection:
         result = connection.execute(
@@ -334,9 +344,14 @@ def like_showcase(showcase_id: int, user_id: int):
 
 
 @router.get("/search", response_model=List[Showcase])
-def search_showcases(user_query: str = "", sc_query: str = ""):
+def search_all_showcases(
+        user_query: str = "",
+        sc_query: str = "",
+        sort_col: ShowcasesSortOptions = ShowcasesSortOptions.date_created,   
+        sort_order: SortOrder = SortOrder.desc
+    ):
     """
-    Retrives showcases that match the following optional queries:
+    Retrieves showcases that match the following optional queries:
     - user_query: Searches showcases based on the author's username; shows results that contain query as a substring of the username.
     - sc_query:  Searches text content (title and caption); shows results that contain query as a substring of either attributes.
 
@@ -345,19 +360,35 @@ def search_showcases(user_query: str = "", sc_query: str = ""):
     with db.engine.begin() as connection:
         results = connection.execute(
             sqlalchemy.text(
-                """
+                f"""
+                    WITH views as (
+                        SELECT showcase_id, COUNT(*) as view_count
+                        FROM showcase_views
+                        GROUP BY showcase_id
+                    ),
+                    likes as (
+                        SELECT showcase_id, COUNT(*) as like_count
+                        FROM showcase_views
+                        WHERE liked = True
+                        GROUP BY showcase_id
+                    )
                     SELECT
                         created_by,
                         title,
+                        view_count,
+                        like_count,
                         caption,
                         date_created,
                         game_id
                     FROM showcases as s
-                    join users as u on s.created_by = u.id
+                    JOIN users as u on s.created_by = u.id
+                    JOIN views as v on s.id = v.showcase_id
+                    JOIN likes as l on s.id = l.showcase_id
                     WHERE
                         (title ILIKE '%' || :sc_query || '%'
                             OR caption ILIKE '%' || :sc_query || '%')
                         AND username ILIKE '%' || :u_query || '%'
+                    ORDER BY {sort_col.value} {sort_order.value}
                 """
             ),
             {"u_query": user_query, "sc_query": sc_query},
@@ -367,6 +398,8 @@ def search_showcases(user_query: str = "", sc_query: str = ""):
         Showcase(
             created_by=row.created_by,
             title=row.title,
+            views=row.view_count,
+            likes=row.like_count,
             caption=row.caption,
             date_created=row.date_created,
             game_id=row.game_id,
@@ -385,8 +418,28 @@ def get_showcase(showcase_id: int):
             result = connection.execute(
                 sqlalchemy.text(
                     """
-                    SELECT created_by, title, caption, date_created, game_id
-                    FROM showcases
+                    WITH views as (
+                        SELECT showcase_id, COUNT(*) as view_count
+                        FROM showcase_views
+                        GROUP BY showcase_id
+                    ),
+                    likes as (
+                        SELECT showcase_id, COUNT(*) as like_count
+                        FROM showcase_views
+                        WHERE liked = True
+                        GROUP BY showcase_id
+                    )
+                    SELECT
+                        created_by,
+                        title,
+                        view_count,
+                        like_count,
+                        caption,
+                        date_created,
+                        game_id
+                    FROM showcases as s
+                    JOIN views as v on s.id = v.showcase_id
+                    JOIN likes as l on s.id = l.showcase_id
                     WHERE id = :showcase_id
                     ORDER BY date_created DESC
                     """
@@ -397,6 +450,8 @@ def get_showcase(showcase_id: int):
             return Showcase(
                 created_by=result.created_by,
                 title=result.title,
+                views=result.view_count,
+                likes=result.like_count,
                 caption=result.caption,
                 date_created=result.date_created,
                 game_id=result.game_id,
@@ -405,48 +460,3 @@ def get_showcase(showcase_id: int):
             raise HTTPException(
                 status_code=404, detail=f"No showcase found matching id: {showcase_id}"
             )
-
-
-class SortOrder(str, Enum):
-    asc = "asc"
-    desc = "desc"
-
-class getallShowcasesSortOptions(str, Enum):
-    title = "title"
-    date_created = "date_created"
-
-
-@router.get("/getshowcases", response_model= List[Showcase])
-def get_all_showcases(
-    sort_col: getallShowcasesSortOptions = getallShowcasesSortOptions.date_created,
-    sort_order: SortOrder = SortOrder.desc
-):
-    """
-    Gets all showcases.
-    Responses can be sorted by author
-    """
-    #list to hold all the showcases
-
-    with db.engine.begin() as connection:
-        result = connection.execute(
-            sqlalchemy.text(
-                f"""
-                SELECT created_by, title, views, caption, date_created, game_id
-                FROM showcases AS s
-                JOIN users as u on s.created_by = u.id
-                ORDER BY {sort_col.value} {sort_order.value}
-                """
-            )
-        ).all()
-
-        return [
-            Showcase(
-                created_by=row.created_by,
-                title=row.title,
-                views=row.views,
-                caption=row.caption,
-                date_created=row.date_created,
-                game_id=row.game_id
-            )
-            for row in result
-        ]
