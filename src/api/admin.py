@@ -61,3 +61,25 @@ def do_autowarn(tolerance: int = 5, user_id: Optional[int] = None):
         users = connection.execute(sqlalchemy.text(query), params).all()
 
         return AutoWarnResponse(affected_users=[user.username for user in users])
+
+@router.delete("/reset", status_code=status.HTTP_204_NO_CONTENT)
+def reset_data():
+    """
+    Truncate all data from all tables; start fresh.
+    """
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                """
+                TRUNCATE
+                    games,
+                    reports,
+                    showcase_comments,
+                    showcase_views,
+                    showcases,
+                    users
+                RESTART IDENTITY
+                CASCADE
+                """
+            )
+        )
