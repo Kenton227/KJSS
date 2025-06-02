@@ -54,6 +54,7 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "uv" },
     { name = "uvicorn" },
+    { name = "wonderwords" },
 ]
 
 [package.metadata]
@@ -69,6 +70,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.39" },
     { name = "uv", specifier = ">=0.6.11" },
     { name = "uvicorn", specifier = ">=0.34.0" },
+    { name = "wonderwords", specifier = ">=2.2.0" },
 ]
 
 [[package]]
@@ -521,4 +523,13 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4b/4d/938bd85e5bf2edeec766267a5015ad969730bb91e31b44021dfe8b22df6c/uvicorn-0.34.0.tar.gz", hash = "sha256:404051050cd7e905de2c9a7e61790943440b3416f49cb409f965d9dcd0fa73e9", size = 76568 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/61/14/33a3a1352cfa71812a3a21e8c9bfb83f60b0011f5e36f2b1399d51928209/uvicorn-0.34.0-py3-none-any.whl", hash = "sha256:023dc038422502fa28a09c7a30bf2b6991512da7dcdb8fd35fe57cfc154126f4", size = 62315 },
+]
+
+[[package]]
+name = "wonderwords"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/ed/d5f4336a7b1b416d5c502a6ed323f02acdb5e67467ef8f5e80ea6617fe3e/wonderwords-2.2.0.tar.gz", hash = "sha256:0b7ec6f591062afc55603bfea71463afbab06794b3064d9f7b04d0ce251a13d0", size = 50579 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b4/a4/6a7705c6e17de71e45782a0284e06691f85350adb80b1dea9c027c07f024/wonderwords-2.2.0-py3-none-any.whl", hash = "sha256:65fc665f1f5590e98f6d9259414ea036bf1b6dd83e51aa6ba44473c99ca92da1", size = 44970 },
 ]
