@@ -12,50 +12,8 @@ router = APIRouter(
 )
 
 
-@router.get("/{game_id}", response_model=GameModel)
-def get_game(game_id: int):
-    """
-    Retrieve a specific game by ID.
-    """
-    with db.engine.begin() as connection:
-        game_data = connection.execute(
-            sqlalchemy.text(
-                """
-                SELECT
-                    black,
-                    white,
-                    winner,
-                    time_control,
-                    duration_in_ms,
-                    date_played
-                FROM games
-                WHERE id = :game_id
-                """
-            ),
-            [
-                {
-                    "game_id": game_id,
-                }
-            ],
-        ).one_or_none()
 
-        # Return 404 on no result found
-        if game_data is None:
-            raise HTTPException(
-                status_code=404, detail=f"No game found with id: {game_id}"
-            )
-
-    return GameModel(
-        black=game_data.black,
-        white=game_data.white,
-        winner=Color[game_data.winner] if game_data.winner != "draw" else None,
-        time_control=game_data.time_control,
-        duration_in_ms=game_data.duration_in_ms,
-        date_played=game_data.date_played.date(),
-    )
-
-
-@router.get("/games/search", response_model=List[GameModel])
+@router.get("/search", response_model=List[GameModel])
 def search_games(player_query: str = "", time_control_query: str = ""):
     """
     Retrieves games that match the following optional queries:
@@ -99,3 +57,46 @@ def search_games(player_query: str = "", time_control_query: str = ""):
         )
         for row in results
     ]
+
+
+@router.get("/{game_id}", response_model=GameModel)
+def get_game(game_id: int):
+    """
+    Retrieve a specific game by ID.
+    """
+    with db.engine.begin() as connection:
+        game_data = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT
+                    black,
+                    white,
+                    winner,
+                    time_control,
+                    duration_in_ms,
+                    date_played
+                FROM games
+                WHERE id = :game_id
+                """
+            ),
+            [
+                {
+                    "game_id": game_id,
+                }
+            ],
+        ).one_or_none()
+
+        # Return 404 on no result found
+        if game_data is None:
+            raise HTTPException(
+                status_code=404, detail=f"No game found with id: {game_id}"
+            )
+
+    return GameModel(
+        black=game_data.black,
+        white=game_data.white,
+        winner=Color[game_data.winner] if game_data.winner != "draw" else None,
+        time_control=game_data.time_control,
+        duration_in_ms=game_data.duration_in_ms,
+        date_played=game_data.date_played.date(),
+    )
