@@ -250,7 +250,7 @@ def get_trending_users(top_n: int, week_range: int):
                         s.created_by as user_id,
                         COALESCE(AVG(vd.views), 0) as avg_views
                     FROM showcases as s
-                    JOIN view_data as vd on s.id = vd.showcase_id
+                    LEFT JOIN view_data as vd on s.id = vd.showcase_id
                     GROUP BY s.created_by
                 ),
                 total_likes as (
@@ -266,11 +266,11 @@ def get_trending_users(top_n: int, week_range: int):
                 SELECT
                     u.username,
                     u.email,
-                    av.avg_views,
-                    tl.total_likes
+                    COALESCE(av.avg_views, 0) as avg_views,
+                    COALESCE(tl.total_likes, 0) as total_likes
                 FROM users as u
-                JOIN avg_views as av on u.id = av.user_id
-                JOIN total_likes as tl on u.id = tl.user_id
+                LEFT JOIN avg_views as av on u.id = av.user_id
+                left JOIN total_likes as tl on u.id = tl.user_id
                 ORDER BY total_likes DESC, avg_views DESC
                 LIMIT :n
                 """
