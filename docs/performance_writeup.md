@@ -30,27 +30,27 @@ The smallest table holds reports against users. Based off assumptions of real-li
 
 # Performance Results of Hitting Endpoints
 ```
-> GET /games/{game_id} - 
-> GET /games/search - 
-> POST /showcases/ - 
-> PUT /showcases/{showcase_id}
-> DELETE /showcases/{showcase_id}
-> GET /showcases/{showcase_id}
-> POST
-> GET
-> DELETE
-> POST
-> PUT
-> GET /showcases/search
-> POST /user/games/{user_id}
-> GET
-> GET
-> POST
-> GET /user/trending
-> POST /reports/
-> GET /reports/
-> POST /admin/autowarn
-> DELETE /admin/reset
+> GET /games/{game_id} - [86 ms]
+> GET /games/search - [7620 ms]
+> POST /showcases/ - [32 ms]
+> PUT /showcases/{showcase_id} - [60 ms]
+> DELETE /showcases/{showcase_id} - [65 ms]
+> GET /showcases/{showcase_id} - [68 ms]
+> POST /showcases/{showcase_id}/comment - []
+> GET /showcases/{showcase_id}/comments - []
+> DELETE /showcases/comments/{comment_id} - []
+> POST /showcases/view/{showcase_id} - []
+> PUT /showcases/like/{showcase_id} - []
+> GET /showcases/search - [4830 ms]
+> POST /user/games/{user_id} - [23 ms]
+> GET /user/games/{user_id}
+> GET /user/showcases/{user_id}
+> POST /user/register - [20 ms]
+> GET /user/trending - 
+> POST /reports/ - 
+> GET /reports/ - 
+> POST /admin/autowarn - 
+> DELETE /admin/reset - 
 
 
 

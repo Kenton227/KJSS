@@ -362,12 +362,12 @@ def search_all_showcases(
             sqlalchemy.text(
                 f"""
                     WITH views as (
-                        SELECT showcase_id, COUNT(*) as view_count
+                        SELECT showcase_id, COALESCE(COUNT(*), 0) as view_count
                         FROM showcase_views
                         GROUP BY showcase_id
                     ),
                     likes as (
-                        SELECT showcase_id, COUNT(*) as like_count
+                        SELECT showcase_id, COALESCE(COUNT(*), 0) as like_count
                         FROM showcase_views
                         WHERE liked = True
                         GROUP BY showcase_id
@@ -375,15 +375,15 @@ def search_all_showcases(
                     SELECT
                         created_by,
                         title,
-                        view_count,
-                        like_count,
+                        COALESCE(view_count, 0) as view_count,
+                        COALESCE(like_count, 0) as like_count,
                         caption,
                         date_created,
                         game_id
                     FROM showcases as s
                     JOIN users as u on s.created_by = u.id
-                    JOIN views as v on s.id = v.showcase_id
-                    JOIN likes as l on s.id = l.showcase_id
+                    LEFT JOIN views as v on s.id = v.showcase_id
+                    LEFT JOIN likes as l on s.id = l.showcase_id
                     WHERE
                         (title ILIKE '%' || :sc_query || '%'
                             OR caption ILIKE '%' || :sc_query || '%')
@@ -419,12 +419,12 @@ def get_showcase(showcase_id: int):
                 sqlalchemy.text(
                     """
                     WITH views as (
-                        SELECT showcase_id, COUNT(*) as view_count
+                        SELECT showcase_id, COALESCE(COUNT(*), 0) as view_count
                         FROM showcase_views
                         GROUP BY showcase_id
                     ),
                     likes as (
-                        SELECT showcase_id, COUNT(*) as like_count
+                        SELECT showcase_id, COALESCE(COUNT(*), 0) as like_count
                         FROM showcase_views
                         WHERE liked = True
                         GROUP BY showcase_id
@@ -432,15 +432,15 @@ def get_showcase(showcase_id: int):
                     SELECT
                         created_by,
                         title,
-                        view_count,
-                        like_count,
+                        COALESCE(view_count, 0) as view_count,
+                        COALESCE(like_count, 0) as like_count,
                         caption,
                         date_created,
                         game_id
                     FROM showcases as s
-                    JOIN views as v on s.id = v.showcase_id
-                    JOIN likes as l on s.id = l.showcase_id
-                    WHERE id = :showcase_id
+                    LEFT JOIN views as v on s.id = v.showcase_id
+                    LEFT JOIN likes as l on s.id = l.showcase_id
+                    WHERE s.id = :showcase_id
                     ORDER BY date_created DESC
                     """
                 ),

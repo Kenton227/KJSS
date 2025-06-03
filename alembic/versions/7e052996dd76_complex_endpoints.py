@@ -27,8 +27,8 @@ def upgrade() -> None:
     op.create_table(
         "showcase_views",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("showcase_id", sa.Integer, sa.ForeignKey("showcases.id")),
-        sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id")),
+        sa.Column("showcase_id", sa.Integer, sa.ForeignKey("showcases.id", ondelete="CASCADE")),
+        sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE")),
         sa.Column("liked", sa.BOOLEAN, nullable=False, server_default="False"),
         sa.Column(
             "view_timestamp",
