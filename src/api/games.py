@@ -55,7 +55,7 @@ def get_game(game_id: int):
     )
 
 
-@router.get("/games/search", response_model=List[GameModel])
+@router.get("/search", response_model=List[GameModel])
 def search_games(player_query: str = "", time_control_query: str = ""):
     """
     Retrieves games that match the following optional queries:

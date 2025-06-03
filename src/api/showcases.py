@@ -60,7 +60,7 @@ class ShowcasesSortOptions(str, Enum):
     date_created = "date_created"
 
 
-@router.post("/post", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
     """
     Post a showcase to the database.

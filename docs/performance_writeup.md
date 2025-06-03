@@ -10,12 +10,12 @@ NOTE: This file make take a while to complete. The file will print "hello world"
 
 ### Data Distribution
 ```
-> users: 10%
-> games: 15%
-> showcases: 15%
-> showcase_comments: 25%
-> showcase_views: 30%
-> reports: 5%
+> users: 10% (195181)
+> games: 15% (300000)
+> showcases: 15% (300000)
+> showcase_comments: 25% (500000)
+> showcase_views: 30% (599993)
+> reports: 5% (100000)
 ```
 
 ### Justification
@@ -30,9 +30,29 @@ The smallest table holds reports against users. Based off assumptions of real-li
 
 # Performance Results of Hitting Endpoints
 ```
->
->
->
+> GET /games/{game_id} - 
+> GET /games/search - 
+> POST /showcases/ - 
+> PUT /showcases/{showcase_id}
+> DELETE /showcases/{showcase_id}
+> GET /showcases/{showcase_id}
+> POST
+> GET
+> DELETE
+> POST
+> PUT
+> GET /showcases/search
+> POST /user/games/{user_id}
+> GET
+> GET
+> POST
+> GET /user/trending
+> POST /reports/
+> GET /reports/
+> POST /admin/autowarn
+> DELETE /admin/reset
+
+
 
 ```
 
