@@ -31,6 +31,10 @@ class UserViews(BaseModel):
     email: Optional[str]
     avg_views: float
     total_likes: int
+    
+class UserElo(BaseModel):
+    user_id: int
+    elo: int
 
 
 def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
@@ -287,3 +291,45 @@ def get_trending_users(top_n: int, week_range: int):
         )
         for row in result
     ]
+
+@router.post("/elo/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def submit_elo_change(user_id: int, elo_change: int, game_id: int):
+    # inserts the elo change into the universal elo ledger
+    # takes the user id, game id, and change in elo for the user
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text("""
+                INSERT INTO elo_ledger (user_id, elo_change, game_id)
+                VALUES (:user_id, :elo_change, :game_id)          
+            """),
+            [
+                {
+                    "user_id": user_id,
+                    "elo_change": elo_change,
+                    "game_id": game_id
+                }
+            ]
+        )
+    pass
+
+@router.get("/elo/{user_id}", response_model=UserElo)
+def get_user_elo(user_id: int):
+    # returns the total elo of the user id
+    # sums up the elo changes in the elo ledger
+    with db.engine.begin() as connection:
+        result = connection.execute(
+            sqlalchemy.text("""
+                SELECT COALESCE(SUM(elo_change), 0) as elo
+                FROM elo_ledger
+                WHERE user_id = :user_id
+                GROUP BY user_id                
+            """),
+            [
+                {
+                    "user_id": user_id
+                }
+            ]
+        ).scalar()
+    if result is None:
+        result = 0
+    return UserElo(user_id=user_id, elo=result)
