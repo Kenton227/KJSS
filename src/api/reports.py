@@ -52,7 +52,7 @@ def post_report(report_data: ReportRequest) -> None:
                     :report_brief,
                     :report_details
                 )
-                RETURNING report_brief, date_reported
+                RETURNING id, report_brief, date_reported
                 """
             ),
             {
@@ -66,6 +66,7 @@ def post_report(report_data: ReportRequest) -> None:
         ).one()
     return {
         "message": "Report successfully sent!",
+        "report_id": new_report.id,
         "report": new_report.report_brief,
         "created_at": new_report.date_reported,
     }

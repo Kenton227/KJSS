@@ -45,6 +45,7 @@ class NewComment(BaseModel):
 
 
 class Comment(BaseModel):
+    comment_id: int
     author: str = Field(..., min_length=1)
     date_posted: datetime
     content: str = Field(..., min_length=1)
@@ -60,7 +61,7 @@ class ShowcasesSortOptions(str, Enum):
     date_created = "date_created"
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def post_showcase(showcase_data: ShowcaseRequest) -> None:
     """
     Post a showcase to the database.
@@ -80,7 +81,7 @@ def post_showcase(showcase_data: ShowcaseRequest) -> None:
                         :title,
                         :caption
                     )
-                    RETURNING title, date_created
+                    RETURNING id, title, date_created
                     """
                 ),
                 [
@@ -104,6 +105,7 @@ def post_showcase(showcase_data: ShowcaseRequest) -> None:
                     )
     return {
         "message": "New showcase created!",
+        "showcase_id": new_showcase.id,
         "title": new_showcase.title,
         "date_created": new_showcase.date_created,
     }
@@ -174,7 +176,7 @@ def post_comment(comment_content: NewComment, showcase_id: int):
                     :showcase_id,
                     :comment
                     )
-                    RETURNING author_id, comment, created_at
+                    RETURNING post_id, author_id, comment, created_at
                     """
                 ),
                 {
@@ -195,6 +197,7 @@ def post_comment(comment_content: NewComment, showcase_id: int):
                     raise e
     return {
         "message": "Comment successfully sent!",
+        "comment_id": new_comment.post_id,
         "author_uid": new_comment.author_id,
         "comment": new_comment.comment,
         "time_sent": new_comment.created_at,
@@ -210,7 +213,7 @@ def get_comments(showcase_id: int):
         result = connection.execute(
             sqlalchemy.text(
                 """
-                SELECT username, comment, created_at
+                SELECT post_id, username, comment, created_at
                 FROM showcase_comments as sc
                 JOIN users as u on sc.author_id = u.id
                 WHERE showcase_id = :SId
@@ -228,7 +231,12 @@ def get_comments(showcase_id: int):
                 raise HTTPException(status_code=404, detail="No showcase found")
 
     return [
-        Comment(author=row.username, date_posted=row.created_at, content=row.comment)
+        Comment(
+            comment_id=row.post_id,
+            author=row.username,
+            date_posted=row.created_at,
+            content=row.comment
+        )
         for row in result
     ]
 
@@ -373,21 +381,22 @@ def search_all_showcases(
                         GROUP BY showcase_id
                     )
                     SELECT
-                        created_by,
+                        s.id as id,
+                        u.username as author,
                         title,
-                        view_count,
-                        like_count,
+                        COALESCE(view_count, 0) as view_count,
+                        COALESCE(like_count, 0) as like_count,
                         caption,
                         date_created,
                         game_id
                     FROM showcases as s
                     JOIN users as u on s.created_by = u.id
-                    JOIN views as v on s.id = v.showcase_id
-                    JOIN likes as l on s.id = l.showcase_id
+                    LEFT JOIN views as v on s.id = v.showcase_id
+                    LEFT JOIN likes as l on s.id = l.showcase_id
                     WHERE
                         (title ILIKE '%' || :sc_query || '%'
                             OR caption ILIKE '%' || :sc_query || '%')
-                        AND username ILIKE '%' || :u_query || '%'
+                        AND (u.username ILIKE '%' || :u_query || '%')
                     ORDER BY {sort_col.value} {sort_order.value}
                 """
             ),
@@ -396,7 +405,8 @@ def search_all_showcases(
 
     return [
         Showcase(
-            created_by=row.created_by,
+            showcase_id=row.id,
+            created_by=row.author,
             title=row.title,
             views=row.view_count,
             likes=row.like_count,
@@ -430,7 +440,8 @@ def get_showcase(showcase_id: int):
                         GROUP BY showcase_id
                     )
                     SELECT
-                        created_by,
+                        s.id as id,
+                        u.username as author,
                         title,
                         view_count,
                         like_count,
@@ -440,7 +451,8 @@ def get_showcase(showcase_id: int):
                     FROM showcases as s
                     JOIN views as v on s.id = v.showcase_id
                     JOIN likes as l on s.id = l.showcase_id
-                    WHERE id = :showcase_id
+                    JOIN users as u on u.id = s.created_by
+                    WHERE s.id = :showcase_id
                     ORDER BY date_created DESC
                     """
                 ),
@@ -448,7 +460,8 @@ def get_showcase(showcase_id: int):
             ).one()
 
             return Showcase(
-                created_by=result.created_by,
+                showcase_id=result.id,
+                created_by=result.author,
                 title=result.title,
                 views=result.view_count,
                 likes=result.like_count,
@@ -458,5 +471,5 @@ def get_showcase(showcase_id: int):
             )
         except sqlalchemy.exc.NoResultFound:
             raise HTTPException(
-                status_code=404, detail=f"No showcase found matching id: {showcase_id}"
+                status_code=404, detail=f"No showcase found"
             )

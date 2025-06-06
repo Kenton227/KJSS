@@ -6,7 +6,7 @@ import sqlalchemy
 from src import database as db
 from typing import List, Self, Optional
 
-from datetime import date
+from datetime import date, datetime
 from psycopg import errors
 from src.db.schemas import Color, GameStatus, TimeControl, GameModel, Showcase
 
@@ -53,6 +53,40 @@ def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
         date_played=game_data.date_played,
     )
 
+class User(BaseModel):
+    user_id: int
+    username: str
+    email: Optional[str]
+    date_registered: datetime
+    status: str 
+
+@router.get("/{user_id}", response_model=User)
+def get_user(user_id):
+    """Retrieve a user by ID."""
+    with db.engine.begin() as connection:
+        try:
+            user = connection.execute(
+                sqlalchemy.text(
+                    """
+                    SELECT
+                        id, username, email, register_date, status
+                    FROM users as u
+                    WHERE id = :uid
+                    """
+                ),
+                {"uid": user_id}
+            ).one()
+        except sqlalchemy.exc.NoResultFound:
+            raise HTTPException(
+                status_code=404, detail=f"No user found"
+            )
+    return User(
+        user_id= user.id,
+        username=user.username,
+        email=user.email,
+        date_registered=user.register_date,
+        status=user.status
+    )
 
 @router.post("/games/{user_id}", status_code=status.HTTP_201_CREATED)
 def submit_game(user_id: int, submission_data: GameSubmitData):

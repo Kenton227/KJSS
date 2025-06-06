@@ -23,6 +23,7 @@ class GameStatus(str, Enum):
 
 
 class GameModel(BaseModel):
+    game_id: int
     black: int
     white: int
     winner: Color | None
@@ -40,7 +41,8 @@ class GameModel(BaseModel):
 
 
 class Showcase(BaseModel):
-    created_by: int
+    showcase_id: int
+    created_by: str
     title: str
     views: int
     likes: int
