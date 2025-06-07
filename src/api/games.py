@@ -27,6 +27,7 @@ def search_games(player_query: str = "", time_control_query: str = ""):
             sqlalchemy.text(
                 """
                 SELECT
+                    id,
                     black,
                     white,
                     winner,
@@ -48,6 +49,7 @@ def search_games(player_query: str = "", time_control_query: str = ""):
 
     return [
         GameModel(
+            game_id=row.id,
             black=row.black,
             white=row.white,
             winner=Color[row.winner] if row.winner != "draw" else None,
