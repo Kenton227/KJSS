@@ -45,6 +45,7 @@ def create_game_model(user_id: int, game_data: GameSubmitData) -> GameModel:
         winner = None
 
     return GameModel(
+        id=-1,
         black=black_player,
         white=white_player,
         winner=winner,
@@ -148,6 +149,7 @@ def get_game_history(user_id: int) -> List[GameModel]:
             sqlalchemy.text(
                 """
                 SELECT
+                    id,
                     black,
                     white,
                     winner,
@@ -185,6 +187,7 @@ def get_game_history(user_id: int) -> List[GameModel]:
 
     return [
         GameModel(
+            game_id=row.id,
             black=row.black,
             white=row.white,
             winner=row.winner if row.winner != 'draw' else None,
