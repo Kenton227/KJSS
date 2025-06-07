@@ -27,7 +27,7 @@ def search_games(player_query: str = "", time_control_query: str = ""):
             sqlalchemy.text(
                 """
                 SELECT
-                    id,
+                    g.id,
                     black,
                     white,
                     winner,
